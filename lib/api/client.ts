@@ -9,7 +9,6 @@ export { API_BASE_URL } from "@/lib/api/constants";
 type RequestOptions = {
   method?: string;
   body?: unknown;
-  token?: string | null;
   skipRefresh?: boolean;
   _retry?: boolean;
   headers?: Record<string, string>;

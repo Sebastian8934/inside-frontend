@@ -6,7 +6,6 @@ export type UserInfo = {
 };
 
 export type LoginResponse = {
-  accessToken: string;
   expiresAt: string;
   user: UserInfo;
 };

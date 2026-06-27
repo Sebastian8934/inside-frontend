@@ -2,12 +2,15 @@ import { axiosDelete, axiosGet, axiosPost, axiosPut } from "@/lib/axios";
 import { buildApiUrl } from "@/lib/api/build-url";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import type {
+  CreateWithdrawalCompanyPayload,
   CreateWithdrawalConsolidatedPayload,
   CreateWithdrawalTransferPayload,
+  UpdateWithdrawalCompanyPayload,
   UpdateWithdrawalConsolidatedPayload,
   UpdateWithdrawalTransferPayload,
   UpsertWithdrawalCompanyLinePayload,
   WithdrawalCompany,
+  WithdrawalCompanyDetail,
   WithdrawalConsolidatedItem,
   WithdrawalDayDetail,
   WithdrawalDayListItem,
@@ -29,11 +32,37 @@ export type WithdrawalConsolidatedFilters = {
   holding?: string;
 };
 
-export async function fetchWithdrawalCompanies(companyId?: number | null) {
+export async function fetchWithdrawalCompanies(
+  companyId?: number | null,
+  activeOnly = true,
+) {
   return (
     (await axiosGet<WithdrawalCompany[]>(
-      buildApiUrl(API_ENDPOINTS.withdrawals.companies, { companyId }),
+      buildApiUrl(API_ENDPOINTS.withdrawals.companies, {
+        companyId,
+        activeOnly,
+      }),
     )) ?? []
+  );
+}
+
+export async function createWithdrawalCompany(
+  payload: CreateWithdrawalCompanyPayload,
+) {
+  return axiosPost<WithdrawalCompanyDetail>(
+    API_ENDPOINTS.withdrawals.companies,
+    payload,
+  );
+}
+
+export async function updateWithdrawalCompany(
+  id: number,
+  payload: UpdateWithdrawalCompanyPayload,
+  companyId?: number | null,
+) {
+  return axiosPut<WithdrawalCompanyDetail>(
+    buildApiUrl(API_ENDPOINTS.withdrawals.company(id), { companyId }),
+    payload,
   );
 }
 

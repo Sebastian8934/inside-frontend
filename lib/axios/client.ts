@@ -4,7 +4,6 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import type { ApiResponse } from "@/types/api";
-import { getAccessToken } from "@/stores/auth-store";
 import { tryRefreshSession } from "@/lib/auth/refresh-session";
 import { API_BASE_URL } from "@/lib/api/constants";
 import { ApiError } from "@/lib/api/errors";
@@ -24,16 +23,6 @@ export const axiosClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-});
-
-axiosClient.interceptors.request.use((config: RetryConfig) => {
-  const token = getAccessToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
 });
 
 axiosClient.interceptors.response.use(
@@ -72,7 +61,6 @@ axiosClient.interceptors.response.use(
 
       if (refreshed) {
         config._retry = true;
-        config.headers.Authorization = `Bearer ${getAccessToken()}`;
         return axiosClient(config);
       }
 

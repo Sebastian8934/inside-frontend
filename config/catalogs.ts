@@ -23,6 +23,10 @@ export const CATALOG_TYPES = {
     title: "Cash out",
     description: "Grupos, conceptos y cuentas de pago",
   },
+  "empresas-retiro": {
+    title: "Empresas de retiro",
+    description: "Empresas del módulo de retiros",
+  },
 } as const;
 
 export type CatalogType = keyof typeof CATALOG_TYPES;

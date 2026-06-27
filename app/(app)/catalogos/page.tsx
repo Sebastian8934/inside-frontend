@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { CatalogHub } from "@/components/features/catalogs/catalog-hub";
 
 export default function CatalogosPage() {
-  redirect("/catalogos/clientes");
+  return <CatalogHub />;
 }

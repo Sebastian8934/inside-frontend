@@ -7,7 +7,7 @@ export default function AuthLayout({
 }) {
   return (
     <GuestGuard>
-      <div className="flex min-h-full items-center justify-center bg-inside-content p-4">
+      <div className="flex min-h-dvh w-full items-center justify-center bg-inside-content p-4 sm:p-6">
         {children}
       </div>
     </GuestGuard>

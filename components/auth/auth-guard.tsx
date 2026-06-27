@@ -11,7 +11,7 @@ type AuthGuardProps = {
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
-  const { isInitialized, status, accessToken } = useAuthStore();
+  const { isInitialized, status } = useAuthStore();
 
   useEffect(() => {
     if (isInitialized && status === "unauthenticated") {
@@ -27,7 +27,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  if (!accessToken) {
+  if (status !== "authenticated") {
     return null;
   }
 

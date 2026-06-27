@@ -11,23 +11,23 @@ type GuestGuardProps = {
 
 export function GuestGuard({ children }: GuestGuardProps) {
   const router = useRouter();
-  const { isInitialized, status, accessToken } = useAuthStore();
+  const { isInitialized, status } = useAuthStore();
 
   useEffect(() => {
-    if (isInitialized && status === "authenticated" && accessToken) {
+    if (isInitialized && status === "authenticated") {
       router.replace("/");
     }
-  }, [isInitialized, status, accessToken, router]);
+  }, [isInitialized, status, router]);
 
   if (!isInitialized || status === "loading") {
     return (
-      <div className="flex min-h-full items-center justify-center bg-inside-content">
+      <div className="flex min-h-dvh w-full items-center justify-center bg-inside-content">
         <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (accessToken) {
+  if (status === "authenticated") {
     return null;
   }
 

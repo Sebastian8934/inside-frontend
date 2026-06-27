@@ -43,6 +43,7 @@ export function FormModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        preventOutsideDismiss
         className={cn(
           "flex w-full flex-col gap-0 overflow-hidden p-0",
           SIZE_CLASSES[size],

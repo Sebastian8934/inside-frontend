@@ -9,6 +9,7 @@ import { CommercialRepsPanel } from "@/components/features/catalogs/commercial-r
 import { OtcCounterpartiesPanel } from "@/components/features/catalogs/otc-counterparties";
 import { PlatformsPanel } from "@/components/features/catalogs/platforms";
 import { WalletsPanel } from "@/components/features/catalogs/wallets";
+import { WithdrawalCompaniesPanel } from "@/components/features/catalogs/withdrawal-companies";
 
 type CatalogPageContentProps = {
   tipo: CatalogType;
@@ -21,6 +22,7 @@ const PANELS: Record<CatalogType, ComponentType> = {
   plataformas: PlatformsPanel,
   comerciales: CommercialRepsPanel,
   "cash-out": CashOutCatalogPanel,
+  "empresas-retiro": WithdrawalCompaniesPanel,
 };
 
 export function CatalogPageContent({ tipo }: CatalogPageContentProps) {

@@ -8,14 +8,14 @@ import { useAppStore } from "@/stores/app-store";
 import { useAuthStore } from "@/stores/auth-store";
 
 export function useCompanyContext() {
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const status = useAuthStore((state) => state.status);
   const activeCompanyId = useAppStore((state) => state.activeCompanyId);
   const setActiveCompanyId = useAppStore((state) => state.setActiveCompanyId);
 
   const query = useQuery({
     queryKey: queryKeys.companies.context,
     queryFn: fetchCompanyContext,
-    enabled: Boolean(accessToken),
+    enabled: status === "authenticated",
   });
 
   useEffect(() => {

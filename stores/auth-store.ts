@@ -8,26 +8,23 @@ export type AuthStatus =
   | "unauthenticated";
 
 type AuthState = {
-  accessToken: string | null;
   expiresAt: string | null;
   user: UserInfo | null;
   status: AuthStatus;
   isInitialized: boolean;
-  setSession: (accessToken: string, expiresAt: string, user: UserInfo) => void;
+  setSession: (expiresAt: string, user: UserInfo) => void;
   setStatus: (status: AuthStatus) => void;
   setInitialized: (initialized: boolean) => void;
   clearSession: () => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: null,
   expiresAt: null,
   user: null,
   status: "idle",
   isInitialized: false,
-  setSession: (accessToken, expiresAt, user) =>
+  setSession: (expiresAt, user) =>
     set({
-      accessToken,
       expiresAt,
       user,
       status: "authenticated",
@@ -36,14 +33,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   setInitialized: (isInitialized) => set({ isInitialized }),
   clearSession: () =>
     set({
-      accessToken: null,
       expiresAt: null,
       user: null,
       status: "unauthenticated",
     }),
 }));
 
-export const getAccessToken = () => useAuthStore.getState().accessToken;
-
-export const isAuthenticated = () =>
-  Boolean(useAuthStore.getState().accessToken && useAuthStore.getState().user);
+export const isAuthenticated = () => {
+  const { status, user } = useAuthStore.getState();
+  return status === "authenticated" && Boolean(user);
+};

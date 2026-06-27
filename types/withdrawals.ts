@@ -5,6 +5,21 @@ export type WithdrawalCompany = {
   isActive: boolean;
 };
 
+export type WithdrawalCompanyDetail = WithdrawalCompany & {
+  createdAt: string;
+  updatedAt: string | null;
+};
+
+export type CreateWithdrawalCompanyPayload = {
+  name: string;
+  companyId?: number | null;
+};
+
+export type UpdateWithdrawalCompanyPayload = {
+  name: string;
+  isActive: boolean;
+};
+
 export type WithdrawalSlot = {
   slotIndex: number;
   amountCop: number;

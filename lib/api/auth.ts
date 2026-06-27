@@ -61,16 +61,11 @@ export async function refreshSessionRequest(): Promise<LoginResponse> {
   return payload.data;
 }
 
-export async function logoutRequest(token: string | null): Promise<void> {
-  if (!token) return;
-
+export async function logoutRequest(): Promise<void> {
   const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.auth.logout}`, {
     method: "POST",
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
   });
 
   if (!response.ok) {
@@ -83,13 +78,10 @@ export async function logoutRequest(token: string | null): Promise<void> {
   }
 }
 
-export async function meRequest(token: string): Promise<UserInfo> {
+export async function meRequest(): Promise<UserInfo> {
   const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.auth.me}`, {
     method: "GET",
     credentials: "include",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
 
   const payload = await parseJsonResponse<UserInfo>(response);
@@ -112,10 +104,7 @@ export function applySession(data: LoginResponse) {
   };
 
   markSessionActive();
-
-  useAuthStore
-    .getState()
-    .setSession(data.accessToken, data.expiresAt, user);
+  useAuthStore.getState().setSession(data.expiresAt, user);
 }
 
 /** Inicializa la pantalla de login sin intentar refresh. */
@@ -126,7 +115,7 @@ export function initGuestAuth(): void {
 }
 
 /**
- * Restaura sesión desde refresh token (cookie httpOnly).
+ * Restaura sesión desde cookies httpOnly (refresh + access token).
  * Solo se invoca en rutas protegidas, nunca en /login.
  */
 export async function restoreSession(): Promise<boolean> {
@@ -147,10 +136,8 @@ export async function restoreSession(): Promise<boolean> {
 }
 
 export async function logoutSession(): Promise<void> {
-  const { accessToken } = useAuthStore.getState();
-
   try {
-    await logoutRequest(accessToken);
+    await logoutRequest();
   } finally {
     clearSessionMarker();
     useAuthStore.getState().clearSession();

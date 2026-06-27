@@ -10,6 +10,17 @@ export function CatalogSubNav() {
 
   return (
     <div className="mb-6 flex flex-wrap gap-2 border-b border-gray-200 pb-4">
+      <Link
+        href="/catalogos"
+        className={cn(
+          "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+          pathname === "/catalogos"
+            ? "bg-primary text-primary-foreground"
+            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+        )}
+      >
+        Inicio
+      </Link>
       {CATALOG_TYPE_LIST.map((tipo) => {
         const href = `/catalogos/${tipo}`;
         const isActive = pathname === href;
