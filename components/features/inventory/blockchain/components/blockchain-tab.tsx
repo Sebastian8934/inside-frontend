@@ -26,9 +26,11 @@ import { useBlockchainList } from "@/components/features/inventory/blockchain/ho
 import { useBlockchainMatchForm } from "@/components/features/inventory/blockchain/hooks/use-blockchain-match-form";
 import { useBlockchainMutations } from "@/components/features/inventory/blockchain/hooks/use-blockchain-mutations";
 import { useBlockchainTransactionForm } from "@/components/features/inventory/blockchain/hooks/use-blockchain-transaction-form";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
 import { FormModal, FormModalFooter } from "@/components/shared/form-modal";
 import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import {
   formatUsdt,
   truncateHash,
@@ -43,6 +45,7 @@ export function BlockchainTab() {
 
   const { data, isLoading } = useBlockchainList({ companyId });
   const { unmatchTransaction } = useBlockchainMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   const createForm = useBlockchainTransactionForm({
     open: createOpen,
@@ -123,7 +126,16 @@ export function BlockchainTab() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => unmatchTransaction.mutate(tx.id)}
+                            onClick={() =>
+                              requestConfirm({
+                                title: "¿Desvincular transacción?",
+                                description:
+                                  "La transacción blockchain dejará de estar asociada al movimiento de inventario.",
+                                confirmLabel: "Desvincular",
+                                onConfirm: () =>
+                                  unmatchTransaction.mutate(tx.id),
+                              })
+                            }
                           >
                             <Unlink className="size-4" />
                           </Button>
@@ -273,6 +285,8 @@ export function BlockchainTab() {
           </form>
         </Form>
       </FormModal>
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

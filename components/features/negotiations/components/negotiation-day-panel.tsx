@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useNegotiationDayForm } from "@/components/features/negotiations/hooks/use-negotiation-day-form";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import type { DailyNegotiationDetail } from "@/types/negotiations";
 import { isNegotiationDayOpen } from "@/types/negotiations";
 import { formatCop, formatDateOnly } from "@/lib/utils/format";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 
 type Props = {
   day: DailyNegotiationDetail;
@@ -26,6 +28,7 @@ export function NegotiationDayPanel({ day, companyId }: Props) {
   const isOpen = isNegotiationDayOpen(day.status);
   const { form, handleSave, handleClose, isSaving, isClosing } =
     useNegotiationDayForm({ day, companyId });
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   return (
     <div className="space-y-4">
@@ -235,7 +238,15 @@ export function NegotiationDayPanel({ day, companyId }: Props) {
             <Button
               type="button"
               variant="destructive"
-              onClick={() => void handleClose()}
+              onClick={() =>
+                requestConfirm({
+                  title: "¿Cerrar día de negociación?",
+                  description:
+                    "El día quedará cerrado y no podrá editarse. Verifica líneas y totales antes de continuar.",
+                  confirmLabel: "Cerrar día",
+                  onConfirm: () => void handleClose(),
+                })
+              }
               disabled={!isOpen || isClosing}
             >
               <Lock className="mr-2 size-4" />
@@ -244,6 +255,8 @@ export function NegotiationDayPanel({ day, companyId }: Props) {
           </div>
         </form>
       </Form>
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

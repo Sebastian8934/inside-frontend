@@ -33,6 +33,25 @@ export function parseApiErrorFromAxios(error: AxiosError): ApiError {
   const status = error.response?.status ?? 500;
   const payload = error.response?.data;
 
+  if (status === 401) {
+    return new ApiError(
+      "Sesión inválida o expirada. Inicie sesión nuevamente.",
+      status,
+    );
+  }
+
+  if (status === 403) {
+    const forbiddenMessage =
+      payload &&
+      typeof payload === "object" &&
+      "message" in payload &&
+      typeof payload.message === "string"
+        ? payload.message
+        : "No tiene permisos para realizar esta acción.";
+
+    return new ApiError(forbiddenMessage, status);
+  }
+
   if (payload && typeof payload === "object") {
     if ("success" in payload) {
       const apiPayload = payload as ApiResponse<unknown>;

@@ -38,8 +38,3 @@ export const useAuthStore = create<AuthState>((set) => ({
       status: "unauthenticated",
     }),
 }));
-
-export const isAuthenticated = () => {
-  const { status, user } = useAuthStore.getState();
-  return status === "authenticated" && Boolean(user);
-};

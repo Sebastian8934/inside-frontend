@@ -27,9 +27,10 @@ import {
 } from "@/components/ui/table";
 import { useDashboard } from "@/components/features/dashboard/hooks/use-dashboard";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
+import { OperationDateFilter } from "@/components/shared/operation-date-filter";
 import { PageHeader } from "@/components/shared/page-header";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
-import { toDateOnlyString } from "@/lib/api/build-url";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useOperationDate } from "@/hooks/use-operation-date";
 import {
   buildDashboardKpisFromSummary,
   type DashboardKpi,
@@ -62,8 +63,8 @@ export function DashboardPageContent() {
   const isClientOnly = useIsClientOnly();
   const isOperator = hasAnyRole(userRoles, OPERATOR_ROLES_LIST);
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const date = toDateOnlyString(operativeDate);
+  const { operationDate, setOperationDate, operationDateString: date } =
+    useOperationDate();
 
   const { data: dashboard, isLoading, isError } = useDashboard({
     companyId,
@@ -108,6 +109,12 @@ export function DashboardPageContent() {
       <PageHeader
         title="Inicio"
         description={`Operaciones — ${formatDateOnly(date)}`}
+        filters={
+          <OperationDateFilter
+            date={operationDate}
+            onDateChange={setOperationDate}
+          />
+        }
         actions={
           <>
             <Button size="sm" variant="outline" asChild>

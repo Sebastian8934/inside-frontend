@@ -13,6 +13,17 @@ import type {
 } from "@/components/features/users/schemas/user.schema";
 import { getApiErrorMessage } from "@/lib/hooks/query-utils";
 import { queryKeys } from "@/lib/query/query-keys";
+import { ROLE_IDS } from "@/config/roles";
+
+function buildCompanyAccessIds(values: UserFormValues | EditUserFormValues) {
+  if (values.role !== ROLE_IDS.SuperUser) {
+    return undefined;
+  }
+
+  const ids = new Set(values.companyAccessIds ?? []);
+  ids.add(values.companyId);
+  return [...ids];
+}
 
 export function useUserMutations() {
   const queryClient = useQueryClient();
@@ -29,6 +40,10 @@ export function useUserMutations() {
         fullName: values.fullName,
         companyId: values.companyId,
         role: values.role,
+        clientId: values.role === ROLE_IDS.Client ? values.clientId : null,
+        commercialRepId:
+          values.role === ROLE_IDS.Employee ? values.commercialRepId : null,
+        companyIds: buildCompanyAccessIds(values),
       }),
     onSuccess: () => {
       toast.success("Usuario creado.");
@@ -50,6 +65,10 @@ export function useUserMutations() {
         companyId: values.companyId,
         role: values.role,
         isActive: values.isActive ?? true,
+        clientId: values.role === ROLE_IDS.Client ? values.clientId : null,
+        commercialRepId:
+          values.role === ROLE_IDS.Employee ? values.commercialRepId : null,
+        companyIds: buildCompanyAccessIds(values),
       }),
     onSuccess: () => {
       toast.success("Usuario actualizado.");

@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -19,11 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { InactiveConfirmSwitch } from "@/components/shared/inactive-confirm-switch";
+import { useCommercialRepsList } from "@/components/features/catalogs/commercial-reps/hooks/use-commercial-reps-list";
+import { useClientsList } from "@/components/features/catalogs/clients/hooks/use-clients-list";
 import { useRolesList } from "@/components/features/users/hooks/use-roles-list";
 import { useUserForm } from "@/components/features/users/hooks/use-user-form";
+import { useAccessibleCompanies } from "@/hooks/use-accessible-companies";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { identityPasswordHint } from "@/lib/validation/password.schema";
-import { getRoleLabel } from "@/config/roles";
+import { getRoleLabel, ROLE_IDS } from "@/config/roles";
 import { FormModal, FormModalFooter } from "@/components/shared/form-modal";
 import type { UserDetail } from "@/types/users";
 
@@ -41,6 +47,10 @@ export function UserFormSheet({
   defaultCompanyId,
 }: UserFormSheetProps) {
   const { data: roles = [] } = useRolesList();
+  const { data: companyContext } = useCompanyContext();
+  const { data: companies = [] } = useAccessibleCompanies();
+  const callerIsSuperUser =
+    companyContext?.role === ROLE_IDS.SuperUser;
 
   const { form, handleSubmit, isEditing, isSubmitting } = useUserForm({
     open,
@@ -49,11 +59,42 @@ export function UserFormSheet({
     onSuccess: () => onOpenChange(false),
   });
 
+  const companyId = form.watch("companyId");
+  const selectedRole = form.watch("role");
+  const companyAccessIds = form.watch("companyAccessIds") ?? [];
+
+  const { data: clients = [] } = useClientsList(companyId ?? defaultCompanyId);
+  const { data: commercialReps = [] } = useCommercialRepsList(
+    companyId ?? defaultCompanyId,
+  );
+
+  useEffect(() => {
+    if (!open) return;
+
+    if (selectedRole === ROLE_IDS.SuperUser) {
+      const current = form.getValues("companyAccessIds") ?? [];
+      const company = form.getValues("companyId");
+
+      if (company && !current.includes(company)) {
+        form.setValue("companyAccessIds", [...current, company]);
+      }
+    }
+  }, [open, selectedRole, form]);
+
+  function toggleCompanyAccess(id: number, checked: boolean) {
+    const current = form.getValues("companyAccessIds") ?? [];
+    const next = checked
+      ? [...new Set([...current, id])]
+      : current.filter((value) => value !== id);
+
+    form.setValue("companyAccessIds", next, { shouldValidate: true });
+  }
+
   return (
     <FormModal
       open={open}
       onOpenChange={onOpenChange}
-      size="xs"
+      size="sm"
       title={isEditing ? "Editar usuario" : "Nuevo usuario"}
       description={
         isEditing
@@ -69,11 +110,7 @@ export function UserFormSheet({
           >
             Cancelar
           </Button>
-          <Button
-            type="submit"
-            form="user-form"
-            disabled={isSubmitting}
-          >
+          <Button type="submit" form="user-form" disabled={isSubmitting}>
             {isSubmitting ? (
               <Loader2 className="size-4 animate-spin" />
             ) : isEditing ? (
@@ -122,6 +159,7 @@ export function UserFormSheet({
               />
             </>
           ) : null}
+
           <FormField
             control={form.control}
             name="fullName"
@@ -135,6 +173,7 @@ export function UserFormSheet({
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="role"
@@ -159,6 +198,155 @@ export function UserFormSheet({
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa principal</FormLabel>
+                {callerIsSuperUser ? (
+                  <Select
+                    value={String(field.value)}
+                    onValueChange={(value) => field.onChange(Number(value))}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar empresa" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={String(company.id)}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <FormControl>
+                    <Input
+                      readOnly
+                      value={
+                        companies.find((c) => c.id === field.value)?.name ??
+                        `Empresa #${field.value}`
+                      }
+                    />
+                  </FormControl>
+                )}
+                <FormDescription>
+                  Empresa por defecto del perfil del usuario.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {selectedRole === ROLE_IDS.SuperUser && callerIsSuperUser ? (
+            <FormField
+              control={form.control}
+              name="companyAccessIds"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Acceso multi-empresa</FormLabel>
+                  <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
+                    {companies.map((company) => (
+                      <label
+                        key={company.id}
+                        className="flex cursor-pointer items-center gap-2 text-sm"
+                      >
+                        <Checkbox
+                          checked={companyAccessIds.includes(company.id)}
+                          onCheckedChange={(checked) =>
+                            toggleCompanyAccess(company.id, checked === true)
+                          }
+                        />
+                        <span>{company.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <FormDescription>
+                    Empresas que el SuperUsuario puede operar y cambiar en el
+                    header.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
+
+          {selectedRole === ROLE_IDS.Client ? (
+            <FormField
+              control={form.control}
+              name="clientId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente vinculado</FormLabel>
+                  <Select
+                    value={field.value ? String(field.value) : ""}
+                    onValueChange={(value) =>
+                      field.onChange(value ? Number(value) : null)
+                    }
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar cliente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={String(client.id)}>
+                          {client.code} — {client.correctedName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Requerido para usuarios con rol Cliente (portal).
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
+
+          {selectedRole === ROLE_IDS.Employee ? (
+            <FormField
+              control={form.control}
+              name="commercialRepId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Representante comercial</FormLabel>
+                  <Select
+                    value={field.value ? String(field.value) : "none"}
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? null : Number(value))
+                    }
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Opcional" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Sin vincular</SelectItem>
+                      {commercialReps.map((rep) => (
+                        <SelectItem key={rep.id} value={String(rep.id)}>
+                          {rep.initials} — {rep.fullName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Opcional. Vincula al empleado con un comercial del
+                    catálogo.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
+
           {isEditing ? (
             <FormField
               control={form.control}
@@ -167,9 +355,10 @@ export function UserFormSheet({
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <FormLabel>Activo</FormLabel>
                   <FormControl>
-                    <Switch
+                    <InactiveConfirmSwitch
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      entityName="este usuario"
                     />
                   </FormControl>
                 </FormItem>

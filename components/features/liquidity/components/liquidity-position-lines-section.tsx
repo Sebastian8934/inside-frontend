@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/table";
 import { LiquidityPositionLineSheet } from "@/components/features/liquidity/components/liquidity-position-line-sheet";
 import { useLiquidityMutations } from "@/components/features/liquidity/hooks/use-liquidity-mutations";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState } from "@/components/shared/data-states";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import type {
   DailyLiquidityCloseDetail,
   LiquidityPositionLine,
@@ -35,6 +37,7 @@ type Props = {
 export function LiquidityPositionLinesSection({ close, companyId }: Props) {
   const isDraft = isLiquidityCloseDraft(close.status);
   const { deletePositionLine } = useLiquidityMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingLine, setEditingLine] = useState<LiquidityPositionLine | null>(
     null,
@@ -153,7 +156,16 @@ export function LiquidityPositionLinesSection({ close, companyId }: Props) {
                               variant="ghost"
                               size="icon"
                               disabled={!isDraft}
-                              onClick={() => deletePositionLine.mutate(line.id)}
+                              onClick={() =>
+                                requestConfirm({
+                                  title: "¿Eliminar línea de posición?",
+                                  description:
+                                    "Se eliminará la línea del cierre de liquidez. Esta acción no se puede deshacer.",
+                                  confirmLabel: "Eliminar",
+                                  onConfirm: () =>
+                                    deletePositionLine.mutate(line.id),
+                                })
+                              }
                             >
                               <Trash2 className="size-4 text-red-600" />
                             </Button>
@@ -177,6 +189,8 @@ export function LiquidityPositionLinesSection({ close, companyId }: Props) {
         nextSortOrder={nextSortOrder}
         defaultCategory={defaultCategory}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

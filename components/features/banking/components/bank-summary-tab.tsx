@@ -21,14 +21,13 @@ import {
 } from "@/components/ui/table";
 import { useBankMovementSummary } from "@/components/features/banking/hooks/use-bank-movement-summary";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
 import { getPeriodFromDate, MONTH_NAMES } from "@/types/banking";
 import { formatCop } from "@/lib/utils/format";
 
 export function BankSummaryTab() {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const defaultPeriod = getPeriodFromDate(operativeDate);
+  const defaultPeriod = getPeriodFromDate(new Date());
 
   const [periodMonth, setPeriodMonth] = useState(
     String(defaultPeriod.periodMonth),

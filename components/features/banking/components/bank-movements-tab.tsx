@@ -25,22 +25,42 @@ import { BankMovementSheet } from "@/components/features/banking/components/bank
 import { useAccountHoldersList } from "@/components/features/banking/hooks/use-account-holders-list";
 import { useBankMovementMutations } from "@/components/features/banking/hooks/use-bank-movement-mutations";
 import { useBankMovementsList } from "@/components/features/banking/hooks/use-bank-movements-list";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import { toDateOnlyString } from "@/lib/api/build-url";
+import { startOfToday } from "@/hooks/use-operation-date";
 import type { BankMovementListItem } from "@/types/banking";
 import { getPeriodFromDate, MONTH_NAMES } from "@/types/banking";
 import { formatCop, formatDateOnly } from "@/lib/utils/format";
 
-export function BankMovementsTab() {
+export function BankMovementsTab({
+  dateFrom: dateFromProp,
+  dateTo: dateToProp,
+  onDateFromChange,
+  onDateToChange,
+  hideDateFilters = false,
+}: {
+  dateFrom?: string;
+  dateTo?: string;
+  onDateFromChange?: (value: string) => void;
+  onDateToChange?: (value: string) => void;
+  hideDateFilters?: boolean;
+} = {}) {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const defaultDate = toDateOnlyString(operativeDate);
-  const defaultPeriod = getPeriodFromDate(operativeDate);
+  const today = startOfToday();
+  const defaultDate = toDateOnlyString(today);
+  const defaultPeriod = getPeriodFromDate(today);
   const { deleteMovement } = useBankMovementMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
-  const [dateFrom, setDateFrom] = useState(defaultDate);
-  const [dateTo, setDateTo] = useState(defaultDate);
+  const [internalDateFrom, setInternalDateFrom] = useState(defaultDate);
+  const [internalDateTo, setInternalDateTo] = useState(defaultDate);
+  const dateFrom = dateFromProp ?? internalDateFrom;
+  const dateTo = dateToProp ?? internalDateTo;
+  const setDateFrom = onDateFromChange ?? setInternalDateFrom;
+  const setDateTo = onDateToChange ?? setInternalDateTo;
   const [holderFilter, setHolderFilter] = useState("all");
   const [periodMonth, setPeriodMonth] = useState(
     String(defaultPeriod.periodMonth),
@@ -96,23 +116,29 @@ export function BankMovementsTab() {
       </div>
 
       <Card>
-        <CardContent className="grid gap-4 p-4 md:grid-cols-5">
-          <div className="space-y-2">
-            <Label>Fecha desde</Label>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Fecha hasta</Label>
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </div>
+        <CardContent
+          className={`grid gap-4 p-4 ${hideDateFilters ? "md:grid-cols-3" : "md:grid-cols-5"}`}
+        >
+          {!hideDateFilters ? (
+            <>
+              <div className="space-y-2">
+                <Label>Fecha desde</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fecha hasta</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+            </>
+          ) : null}
           <div className="space-y-2">
             <Label>Titular</Label>
             <Select value={holderFilter} onValueChange={setHolderFilter}>
@@ -228,7 +254,16 @@ export function BankMovementsTab() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteMovement.mutate(movement.id)}
+                            onClick={() =>
+                              requestConfirm({
+                                title: "¿Eliminar movimiento bancario?",
+                                description:
+                                  "Se eliminará el movimiento del registro. Esta acción no se puede deshacer.",
+                                confirmLabel: "Eliminar",
+                                onConfirm: () =>
+                                  deleteMovement.mutate(movement.id),
+                              })
+                            }
                           >
                             <Trash2 className="size-4 text-red-600" />
                           </Button>
@@ -253,6 +288,8 @@ export function BankMovementsTab() {
           periodYear: Number(periodYear),
         }}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

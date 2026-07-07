@@ -6,11 +6,14 @@ import {
   type BlockchainFilters,
 } from "@/components/features/inventory/blockchain/api/blockchain.api";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 
 export function useBlockchainList(filters: BlockchainFilters) {
+  const authReady = useAuthQueryEnabled();
+
   return useQuery({
     queryKey: queryKeys.blockchain.transactions(filters),
     queryFn: () => fetchBlockchainTransactionsApi(filters),
-    enabled: Boolean(filters.companyId),
+    enabled: authReady && Boolean(filters.companyId),
   });
 }

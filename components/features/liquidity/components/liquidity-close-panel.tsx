@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Lock, RefreshCw } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,9 +14,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useLiquidityCloseForm } from "@/components/features/liquidity/hooks/use-liquidity-close-form";
 import { useLiquidityMutations } from "@/components/features/liquidity/hooks/use-liquidity-mutations";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import type { DailyLiquidityCloseDetail } from "@/types/liquidity";
 import { isLiquidityCloseDraft } from "@/types/liquidity";
 import { formatCop, formatDateOnly } from "@/lib/utils/format";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 
 type Props = {
   close: DailyLiquidityCloseDetail;
@@ -29,7 +31,8 @@ export function LiquidityClosePanel({ close, companyId }: Props) {
     close,
     companyId,
   });
-  const { refreshFromDelivery, closeDay } = useLiquidityMutations(companyId);
+  const { closeDay } = useLiquidityMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   return (
     <div className="space-y-4">
@@ -112,22 +115,24 @@ export function LiquidityClosePanel({ close, companyId }: Props) {
           Guardar notas
         </Button>
         <Button
-          variant="outline"
-          onClick={() => refreshFromDelivery.mutate(close.id)}
-          disabled={!isDraft || refreshFromDelivery.isPending}
-        >
-          <RefreshCw className="mr-2 size-4" />
-          Actualizar delivery
-        </Button>
-        <Button
           variant="destructive"
-          onClick={() => closeDay.mutate(close.id)}
+          onClick={() =>
+            requestConfirm({
+              title: "¿Cerrar liquidez del día?",
+              description:
+                "El cierre quedará bloqueado y no podrá editarse. Verifica los saldos antes de continuar.",
+              confirmLabel: "Cerrar liquidez",
+              onConfirm: () => closeDay.mutate(close.id),
+            })
+          }
           disabled={!isDraft || closeDay.isPending}
         >
           <Lock className="mr-2 size-4" />
           Cerrar liquidez
         </Button>
       </div>
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

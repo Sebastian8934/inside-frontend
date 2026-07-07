@@ -5,13 +5,15 @@ import {
   fetchWithdrawalClientsApi,
   fetchWithdrawalCompaniesApi,
 } from "@/components/features/withdrawals/api/withdrawals.api";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 import { queryKeys } from "@/lib/query/query-keys";
 
 export function useWithdrawalCatalogQueries(
   companyId: number | null,
   enabled = true,
 ) {
-  const isEnabled = enabled && Boolean(companyId);
+  const authReady = useAuthQueryEnabled();
+  const isEnabled = authReady && enabled && Boolean(companyId);
 
   const companiesQuery = useQuery({
     queryKey: queryKeys.withdrawals.companies({ companyId }),

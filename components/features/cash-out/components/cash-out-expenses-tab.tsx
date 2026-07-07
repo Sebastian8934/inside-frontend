@@ -29,16 +29,17 @@ import {
   useCashOutExpensesList,
 } from "@/components/features/cash-out/hooks/use-cash-out-expenses-list";
 import { useCashOutMutations } from "@/components/features/cash-out/hooks/use-cash-out-mutations";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import type { CashOutExpenseListItem } from "@/types/cash-out";
 import { getPeriodFromDate, MONTH_NAMES } from "@/types/cash-out";
 import { formatCop, formatDateOnly } from "@/lib/utils/format";
 
 export function CashOutExpensesTab() {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const defaultPeriod = getPeriodFromDate(operativeDate);
+  const defaultPeriod = getPeriodFromDate(new Date());
 
   const [periodMonth, setPeriodMonth] = useState(
     String(defaultPeriod.periodMonth),
@@ -79,6 +80,7 @@ export function CashOutExpensesTab() {
   const { groups } = useCashOutCatalogQueries(companyId);
 
   const { deleteExpense, reviewExpense } = useCashOutMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   if (!companyId) {
     return <EmptyState message="Seleccione una empresa." />;
@@ -256,7 +258,16 @@ export function CashOutExpensesTab() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteExpense.mutate(expense.id)}
+                            onClick={() =>
+                              requestConfirm({
+                                title: "¿Eliminar egreso?",
+                                description:
+                                  "Se eliminará el egreso del registro. Esta acción no se puede deshacer.",
+                                confirmLabel: "Eliminar",
+                                onConfirm: () =>
+                                  deleteExpense.mutate(expense.id),
+                              })
+                            }
                           >
                             <Trash2 className="size-4 text-red-600" />
                           </Button>
@@ -278,6 +289,8 @@ export function CashOutExpensesTab() {
         expense={editingExpense}
         defaultDate={defaultDate}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

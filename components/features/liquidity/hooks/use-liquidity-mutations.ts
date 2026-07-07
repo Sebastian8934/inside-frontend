@@ -8,6 +8,7 @@ import {
   createLiquidityPositionLineApi,
   deleteLiquidityPositionLineApi,
   refreshLiquidityFromDeliveryApi,
+  refreshLiquiditySourcesApi,
   updateLiquidityCloseApi,
   updateLiquidityPositionLineApi,
 } from "@/components/features/liquidity/api/liquidity.api";
@@ -71,6 +72,25 @@ export function useLiquidityMutations(companyId: number | null) {
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const refreshSources = useMutation({
+    mutationFn: ({
+      closeId,
+      options,
+    }: {
+      closeId: number;
+      options?: {
+        delivery?: boolean;
+        inventory?: boolean;
+        banks?: boolean;
+      };
+    }) => refreshLiquiditySourcesApi(closeId, options, companyId),
+    onSuccess: () => {
+      toast.success("Fuentes aplicadas al cierre de liquidez.");
+      invalidate();
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+
   const closeDay = useMutation({
     mutationFn: (closeId: number) => closeLiquidityDayApi(closeId, companyId),
     onSuccess: () => {
@@ -125,6 +145,7 @@ export function useLiquidityMutations(companyId: number | null) {
     createClose,
     updateClose,
     refreshFromDelivery,
+    refreshSources,
     closeDay,
     createPositionLine,
     updatePositionLine,
@@ -133,6 +154,7 @@ export function useLiquidityMutations(companyId: number | null) {
       createClose.isPending ||
       updateClose.isPending ||
       refreshFromDelivery.isPending ||
+      refreshSources.isPending ||
       closeDay.isPending ||
       createPositionLine.isPending ||
       updatePositionLine.isPending ||

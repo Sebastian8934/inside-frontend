@@ -91,6 +91,8 @@ export const API_ENDPOINTS = {
     closeDay: (id: number) => `/api/liquidity/closes/${id}/close`,
     refreshDelivery: (id: number) =>
       `/api/liquidity/closes/${id}/refresh-delivery`,
+    refreshSources: (id: number) =>
+      `/api/liquidity/closes/${id}/refresh-sources`,
     lines: (closeId: number) => `/api/liquidity/closes/${closeId}/lines`,
     line: (lineId: number) => `/api/liquidity/lines/${lineId}`,
   },

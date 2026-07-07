@@ -6,11 +6,14 @@ import {
   type OtcSummaryFilters,
 } from "@/components/features/inventory/otc-summary/api/otc-summary.api";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 
 export function useOtcSummaryList(filters: OtcSummaryFilters) {
+  const authReady = useAuthQueryEnabled();
+
   return useQuery({
     queryKey: queryKeys.inventory.otcSummary(filters),
     queryFn: () => fetchOtcSummaryApi(filters),
-    enabled: Boolean(filters.companyId),
+    enabled: authReady && Boolean(filters.companyId),
   });
 }

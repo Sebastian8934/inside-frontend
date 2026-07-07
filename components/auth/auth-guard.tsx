@@ -28,7 +28,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   if (status !== "authenticated") {
-    return null;
+    return (
+      <div className="flex min-h-full items-center justify-center bg-inside-content">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return <>{children}</>;

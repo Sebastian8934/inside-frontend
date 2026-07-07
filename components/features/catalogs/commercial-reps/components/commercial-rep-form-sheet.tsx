@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { InactiveConfirmSwitch } from "@/components/shared/inactive-confirm-switch";
 import { useCommercialRepForm } from "@/components/features/catalogs/commercial-reps/hooks/use-commercial-rep-form";
 import { FormModal, FormModalFooter } from "@/components/shared/form-modal";
 import type { CommercialRep } from "@/types/catalogs";
@@ -105,9 +105,10 @@ export function CommercialRepFormSheet({
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <FormLabel>Activo</FormLabel>
                   <FormControl>
-                    <Switch
+                    <InactiveConfirmSwitch
                       checked={field.value ?? true}
                       onCheckedChange={field.onChange}
+                      entityName="este comercial"
                     />
                   </FormControl>
                 </FormItem>

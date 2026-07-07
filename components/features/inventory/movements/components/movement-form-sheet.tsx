@@ -201,13 +201,14 @@ export function MovementFormSheet({
                         step="0.01"
                         className="tabular-nums"
                         value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : e.target.valueAsNumber,
-                          )
-                        }
+                        onChange={(e) => {
+                          if (e.target.value === "") {
+                            field.onChange(undefined);
+                            return;
+                          }
+                          const value = e.target.valueAsNumber;
+                          field.onChange(Number.isNaN(value) ? undefined : value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -226,7 +227,14 @@ export function MovementFormSheet({
                         step="1"
                         className="tabular-nums"
                         value={field.value ?? ""}
-                        onChange={field.onChange}
+                        onChange={(e) => {
+                          if (e.target.value === "") {
+                            field.onChange(undefined);
+                            return;
+                          }
+                          const value = e.target.valueAsNumber;
+                          field.onChange(Number.isNaN(value) ? undefined : value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

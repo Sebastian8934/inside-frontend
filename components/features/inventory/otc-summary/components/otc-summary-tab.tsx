@@ -11,20 +11,27 @@ import {
 } from "@/components/ui/table";
 import { useOtcSummaryList } from "@/components/features/inventory/otc-summary/hooks/use-otc-summary-list";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
-import { toDateOnlyString } from "@/lib/api/build-url";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useOperationDate } from "@/hooks/use-operation-date";
 import { formatCop, formatUsdt, usdtColorClass } from "@/lib/utils/format";
 
-export function OtcSummaryTab() {
+type Props = {
+  operationDateString?: string;
+  hideDateFilter?: boolean;
+};
+
+export function OtcSummaryTab({
+  operationDateString: operationDateStringProp,
+}: Props) {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const date = toDateOnlyString(operativeDate);
+  const { operationDateString: hookDate } = useOperationDate();
+  const date = operationDateStringProp ?? hookDate;
 
   const { data, isLoading } = useOtcSummaryList({ companyId, date });
 
   return (
     <Card>
-      <CardContent className="p-0">
+      <CardContent className="space-y-4 p-4">
         {isLoading ? <LoadingState /> : null}
         {!isLoading && data?.length === 0 ? (
           <EmptyState message="No hay resumen OTC para la fecha operativa." />

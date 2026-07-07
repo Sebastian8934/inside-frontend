@@ -26,20 +26,22 @@ import {
 import { WithdrawalConsolidatedSheet } from "@/components/features/withdrawals/components/withdrawal-consolidated-sheet";
 import { useWithdrawalConsolidatedList } from "@/components/features/withdrawals/hooks/use-withdrawal-consolidated-list";
 import { useWithdrawalConsolidatedMutations } from "@/components/features/withdrawals/hooks/use-withdrawal-mutations";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import { formatCop, formatDateOnly } from "@/lib/utils/format";
 import type { WithdrawalConsolidatedItem } from "@/types/withdrawals";
 
 export function WithdrawalConsolidatedTab() {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
+  const today = new Date();
 
   const [periodMonth, setPeriodMonth] = useState<string>(
-    String(operativeDate.getMonth() + 1),
+    String(today.getMonth() + 1),
   );
   const [periodYear, setPeriodYear] = useState<string>(
-    String(operativeDate.getFullYear()),
+    String(today.getFullYear()),
   );
   const [holdingFilter, setHoldingFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -59,6 +61,7 @@ export function WithdrawalConsolidatedTab() {
 
   const { data = [], isLoading } = useWithdrawalConsolidatedList(filters);
   const { deleteConsolidated } = useWithdrawalConsolidatedMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   const holdings = useMemo(() => {
     const values = new Set<string>();
@@ -214,7 +217,16 @@ export function WithdrawalConsolidatedTab() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteConsolidated.mutate(item.id)}
+                          onClick={() =>
+                            requestConfirm({
+                              title: "¿Eliminar ítem del consolidado?",
+                              description:
+                                "Se eliminará el registro del consolidado mensual. Esta acción no se puede deshacer.",
+                              confirmLabel: "Eliminar",
+                              onConfirm: () =>
+                                deleteConsolidated.mutate(item.id),
+                            })
+                          }
                         >
                           <Trash2 className="size-4 text-red-600" />
                         </Button>
@@ -243,6 +255,8 @@ export function WithdrawalConsolidatedTab() {
         defaultPeriodMonth={Number(periodMonth)}
         defaultPeriodYear={Number(periodYear)}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

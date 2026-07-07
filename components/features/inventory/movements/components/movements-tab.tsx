@@ -26,8 +26,9 @@ import { MovementFormSheet } from "@/components/features/inventory/movements/com
 import { useMovementCatalogQueries } from "@/components/features/inventory/movements/hooks/use-movement-catalog-queries";
 import { useMovementsList } from "@/components/features/inventory/movements/hooks/use-movements-list";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
 import { toDateOnlyString } from "@/lib/api/build-url";
+import { startOfToday } from "@/hooks/use-operation-date";
 import type { InventoryMovement } from "@/types/inventory";
 import { MOVEMENT_TYPES } from "@/types/inventory";
 import {
@@ -38,13 +39,28 @@ import {
   usdtColorClass,
 } from "@/lib/utils/format";
 
-export function MovementsTab() {
+export function MovementsTab({
+  dateFrom: dateFromProp,
+  dateTo: dateToProp,
+  onDateFromChange,
+  onDateToChange,
+  hideDateFilters = false,
+}: {
+  dateFrom?: string;
+  dateTo?: string;
+  onDateFromChange?: (value: string) => void;
+  onDateToChange?: (value: string) => void;
+  hideDateFilters?: boolean;
+} = {}) {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const defaultDate = toDateOnlyString(operativeDate);
+  const defaultDate = toDateOnlyString(startOfToday());
 
-  const [dateFrom, setDateFrom] = useState(defaultDate);
-  const [dateTo, setDateTo] = useState(defaultDate);
+  const [internalDateFrom, setInternalDateFrom] = useState(defaultDate);
+  const [internalDateTo, setInternalDateTo] = useState(defaultDate);
+  const dateFrom = dateFromProp ?? internalDateFrom;
+  const dateTo = dateToProp ?? internalDateTo;
+  const setDateFrom = onDateFromChange ?? setInternalDateFrom;
+  const setDateTo = onDateToChange ?? setInternalDateTo;
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [hashFilter, setHashFilter] = useState("");
@@ -70,23 +86,29 @@ export function MovementsTab() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="grid gap-4 p-4 md:grid-cols-5">
-          <div className="space-y-2">
-            <Label>Fecha desde</Label>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Fecha hasta</Label>
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </div>
+        <CardContent
+          className={`grid gap-4 p-4 ${hideDateFilters ? "md:grid-cols-3" : "md:grid-cols-5"}`}
+        >
+          {!hideDateFilters ? (
+            <>
+              <div className="space-y-2">
+                <Label>Fecha desde</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fecha hasta</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+            </>
+          ) : null}
           <div className="space-y-2">
             <Label>Cliente</Label>
             <Select value={clientFilter} onValueChange={setClientFilter}>

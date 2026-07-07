@@ -51,6 +51,20 @@ export function useMovementForm({
     });
   }, [open, movement, defaultDate, form]);
 
+  const usdtAmount = form.watch("usdtAmount");
+  const purchaseRate = form.watch("purchaseRate");
+
+  useEffect(() => {
+    if (!open || movement) return;
+
+    if (purchaseRate == null || Number.isNaN(purchaseRate)) {
+      return;
+    }
+
+    const total = Math.round(usdtAmount * purchaseRate * 100) / 100;
+    form.setValue("totalCop", total, { shouldValidate: true });
+  }, [open, movement, usdtAmount, purchaseRate, form]);
+
   async function handleSubmit(values: MovementFormValues) {
     if (movement) {
       await updateMovement.mutateAsync({ id: movement.id, values });

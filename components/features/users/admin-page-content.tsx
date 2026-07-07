@@ -15,34 +15,44 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserFormSheet } from "@/components/features/users";
+import { useRolesList } from "@/components/features/users/hooks/use-roles-list";
 import { useUserMutations } from "@/components/features/users/hooks/use-user-mutations";
 import { useUsersList } from "@/components/features/users/hooks/use-users-list";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
 import { PageHeader } from "@/components/shared/page-header";
+import { useAccessibleCompanies } from "@/hooks/use-accessible-companies";
 import { useActiveCompanyId } from "@/hooks/use-active-company";
-import { canManageUsers, getPrimaryRoleLabel, getRoleLabel } from "@/lib/auth/permissions";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
+import {
+  canManageUsers,
+  getPrimaryRoleLabel,
+  getRoleLabel,
+} from "@/lib/auth/permissions";
 import { useUserRoles } from "@/hooks/use-user-roles";
 import { useAuthStore } from "@/stores/auth-store";
+import { ROLE_IDS } from "@/config/roles";
 import type { UserDetail } from "@/types/users";
 
-export function ConfigPageContent() {
+export function AdminPageContent() {
   const userRoles = useUserRoles();
 
   if (!canManageUsers(userRoles)) {
     return (
       <div className="p-6">
-        <EmptyState message="No tienes permisos para acceder a configuración." />
+        <EmptyState message="No tienes permisos para acceder a administración." />
       </div>
     );
   }
 
-  return <UsersConfigPanel />;
+  return <UsersAdminPanel />;
 }
 
-function UsersConfigPanel() {
+function UsersAdminPanel() {
   const companyId = useActiveCompanyId();
   const currentUser = useAuthStore((state) => state.user);
   const { deactivateUser } = useUserMutations();
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserDetail | null>(null);
 
@@ -51,13 +61,15 @@ function UsersConfigPanel() {
   return (
     <div className="p-6">
       <PageHeader
-        title="Configuración"
-        description="Gestión de usuarios y configuración del sistema"
+        title="Administración"
+        description="Usuarios, roles y acceso a empresas del sistema"
       />
 
       <Tabs defaultValue="usuarios" className="space-y-4">
         <TabsList>
           <TabsTrigger value="usuarios">Usuarios</TabsTrigger>
+          <TabsTrigger value="roles">Roles</TabsTrigger>
+          <TabsTrigger value="empresas">Empresas</TabsTrigger>
           <TabsTrigger value="perfil">Mi perfil</TabsTrigger>
         </TabsList>
 
@@ -105,7 +117,17 @@ function UsersConfigPanel() {
                             {getRoleLabel(user.role)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{user.companyName}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <span>{user.companyName}</span>
+                            {user.role === ROLE_IDS.SuperUser &&
+                            user.companyAccessIds.length > 1 ? (
+                              <Badge variant="outline" className="text-xs">
+                                {user.companyAccessIds.length} empresas
+                              </Badge>
+                            ) : null}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge
                             variant={user.isActive ? "default" : "secondary"}
@@ -131,7 +153,13 @@ function UsersConfigPanel() {
                                 size="sm"
                                 className="text-red-600"
                                 onClick={() =>
-                                  deactivateUser.mutate(user.id)
+                                  requestConfirm({
+                                    title: "¿Desactivar usuario?",
+                                    description: `${user.fullName} perderá acceso al sistema hasta que se reactive su cuenta.`,
+                                    confirmLabel: "Desactivar",
+                                    onConfirm: () =>
+                                      deactivateUser.mutate(user.id),
+                                  })
                                 }
                               >
                                 <UserX className="size-4" />
@@ -146,6 +174,14 @@ function UsersConfigPanel() {
               ) : null}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="roles">
+          <RolesPanel />
+        </TabsContent>
+
+        <TabsContent value="empresas">
+          <CompaniesPanel />
         </TabsContent>
 
         <TabsContent value="perfil">
@@ -174,6 +210,103 @@ function UsersConfigPanel() {
         user={editingUser}
         defaultCompanyId={companyId ?? 1}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
+}
+
+function RolesPanel() {
+  const { data: roles = [], isLoading } = useRolesList();
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (roles.length === 0) {
+    return <EmptyState message="No hay roles disponibles." />;
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Rol</TableHead>
+              <TableHead>Nombre visible</TableHead>
+              <TableHead>Descripción</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {roles.map((role) => (
+              <TableRow key={role.id}>
+                <TableCell className="font-mono text-sm">{role.name}</TableCell>
+                <TableCell>{role.displayName ?? getRoleLabel(role.name)}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {getRoleDescription(role.name)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CompaniesPanel() {
+  const { data: companies = [], isLoading } = useAccessibleCompanies();
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (companies.length === 0) {
+    return <EmptyState message="No tienes empresas accesibles." />;
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Empresa</TableHead>
+              <TableHead>Identificación fiscal</TableHead>
+              <TableHead>Estado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {companies.map((company) => (
+              <TableRow key={company.id}>
+                <TableCell className="font-medium">{company.name}</TableCell>
+                <TableCell>{company.taxId ?? "—"}</TableCell>
+                <TableCell>
+                  <Badge variant={company.isActive ? "default" : "secondary"}>
+                    {company.isActive ? "Activa" : "Inactiva"}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function getRoleDescription(roleName: string): string {
+  switch (roleName) {
+    case ROLE_IDS.SuperUser:
+      return "Acceso global y multi-empresa. Puede gestionar usuarios y cambiar de empresa.";
+    case ROLE_IDS.Admin:
+      return "Administrador de una empresa. Gestiona usuarios y catálogos de su organización.";
+    case ROLE_IDS.Employee:
+      return "Operador interno. Acceso a módulos operativos según permisos.";
+    case ROLE_IDS.Client:
+      return "Usuario externo vinculado a un cliente. Acceso de solo lectura al portal.";
+    default:
+      return "Rol del sistema.";
+  }
 }

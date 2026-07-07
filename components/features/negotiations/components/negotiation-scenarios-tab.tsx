@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/table";
 import { NegotiationScenarioSheet } from "@/components/features/negotiations/components/negotiation-scenario-sheet";
 import { useNegotiationScenarioMutations } from "@/components/features/negotiations/hooks/use-negotiation-mutations";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState } from "@/components/shared/data-states";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import type {
   DailyNegotiationDetail,
   NegotiationRateScenario,
@@ -31,6 +33,7 @@ export function NegotiationScenariosTab({ day, companyId }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<NegotiationRateScenario | null>(null);
   const { deleteScenario } = useNegotiationScenarioMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   const nextSortOrder =
     day.rateScenarios.reduce((max, s) => Math.max(max, s.sortOrder), 0) + 1;
@@ -103,7 +106,16 @@ export function NegotiationScenariosTab({ day, companyId }: Props) {
                             variant="ghost"
                             size="icon"
                             disabled={!isOpen}
-                            onClick={() => deleteScenario.mutate(scenario.id)}
+                            onClick={() =>
+                              requestConfirm({
+                                title: "¿Eliminar escenario de tasa?",
+                                description:
+                                  "Se eliminará el escenario del día. Esta acción no se puede deshacer.",
+                                confirmLabel: "Eliminar",
+                                onConfirm: () =>
+                                  deleteScenario.mutate(scenario.id),
+                              })
+                            }
                           >
                             <Trash2 className="size-4 text-red-600" />
                           </Button>
@@ -125,6 +137,8 @@ export function NegotiationScenariosTab({ day, companyId }: Props) {
         scenario={editing}
         nextSortOrder={nextSortOrder}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/table";
 import { NegotiationQuotaSheet } from "@/components/features/negotiations/components/negotiation-quota-sheet";
 import { useNegotiationQuotaMutations } from "@/components/features/negotiations/hooks/use-negotiation-mutations";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState } from "@/components/shared/data-states";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import type {
   DailyNegotiationDetail,
   NegotiationDailyQuota,
@@ -33,6 +35,7 @@ export function NegotiationQuotasTab({ day, companyId }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<NegotiationDailyQuota | null>(null);
   const { deleteQuota } = useNegotiationQuotaMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   return (
     <div className="space-y-4">
@@ -106,7 +109,15 @@ export function NegotiationQuotasTab({ day, companyId }: Props) {
                           variant="ghost"
                           size="icon"
                           disabled={!isOpen}
-                          onClick={() => deleteQuota.mutate(quota.id)}
+                          onClick={() =>
+                            requestConfirm({
+                              title: "¿Eliminar cupo diario?",
+                              description:
+                                "Se eliminará el cupo del día. Esta acción no se puede deshacer.",
+                              confirmLabel: "Eliminar",
+                              onConfirm: () => deleteQuota.mutate(quota.id),
+                            })
+                          }
                         >
                           <Trash2 className="size-4 text-red-600" />
                         </Button>
@@ -127,6 +138,8 @@ export function NegotiationQuotasTab({ day, companyId }: Props) {
         companyId={companyId}
         quota={editing}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

@@ -6,11 +6,14 @@ import {
   type MovementFilters,
 } from "@/components/features/inventory/movements/api/movements.api";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 
 export function useMovementsList(filters: MovementFilters) {
+  const authReady = useAuthQueryEnabled();
+
   return useQuery({
     queryKey: queryKeys.inventory.movements(filters),
     queryFn: () => fetchMovementsApi(filters),
-    enabled: Boolean(filters.companyId),
+    enabled: authReady && Boolean(filters.companyId),
   });
 }

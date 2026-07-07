@@ -4,12 +4,13 @@ import {
   Building2,
   Coins,
   Database,
+  FileBarChart2,
   Handshake,
   History,
   Landmark,
   LayoutDashboard,
   Package,
-  Settings,
+  UserCog,
   Truck,
   Wallet,
 } from "lucide-react";
@@ -114,6 +115,17 @@ export const navigation: NavEntry[] = [
     ],
   },
   {
+    title: "INFORMES",
+    items: [
+      {
+        title: "Informes",
+        href: "/informes",
+        icon: FileBarChart2,
+        roles: [...OPERATOR_ROLES],
+      },
+    ],
+  },
+  {
     title: "CATÁLOGOS",
     items: [
       {
@@ -124,13 +136,14 @@ export const navigation: NavEntry[] = [
       },
     ],
   },
+
   {
-    title: "CONFIGURACIÓN",
+    title: "ADMINISTRACIÓN",
     items: [
       {
-        title: "Configuración",
-        href: "/configuracion",
-        icon: Settings,
+        title: "Administración",
+        href: "/administracion",
+        icon: UserCog,
         roles: [...MANAGE_USERS_ROLES],
         policy: "ManageUsers",
       },

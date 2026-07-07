@@ -17,19 +17,37 @@ import {
 import { CashOutTransactionCostSheet } from "@/components/features/cash-out/components/cash-out-transaction-cost-sheet";
 import { useCashOutMutations } from "@/components/features/cash-out/hooks/use-cash-out-mutations";
 import { useCashOutTransactionCostsList } from "@/components/features/cash-out/hooks/use-cash-out-transaction-costs-list";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import { toDateOnlyString } from "@/lib/api/build-url";
+import { startOfToday } from "@/hooks/use-operation-date";
 import type { CashOutTransactionCost } from "@/types/cash-out";
 import { formatCop, formatDateOnly } from "@/lib/utils/format";
 
-export function CashOutTransactionCostsTab() {
+export function CashOutTransactionCostsTab({
+  dateFrom: dateFromProp,
+  dateTo: dateToProp,
+  onDateFromChange,
+  onDateToChange,
+  hideDateFilters = false,
+}: {
+  dateFrom?: string;
+  dateTo?: string;
+  onDateFromChange?: (value: string) => void;
+  onDateToChange?: (value: string) => void;
+  hideDateFilters?: boolean;
+} = {}) {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const defaultDate = toDateOnlyString(operativeDate);
+  const defaultDate = toDateOnlyString(startOfToday());
 
-  const [dateFrom, setDateFrom] = useState(defaultDate);
-  const [dateTo, setDateTo] = useState(defaultDate);
+  const [internalDateFrom, setInternalDateFrom] = useState(defaultDate);
+  const [internalDateTo, setInternalDateTo] = useState(defaultDate);
+  const dateFrom = dateFromProp ?? internalDateFrom;
+  const dateTo = dateToProp ?? internalDateTo;
+  const setDateFrom = onDateFromChange ?? setInternalDateFrom;
+  const setDateTo = onDateToChange ?? setInternalDateTo;
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCost, setEditingCost] =
     useState<CashOutTransactionCost | null>(null);
@@ -41,6 +59,7 @@ export function CashOutTransactionCostsTab() {
 
   const { data: costs = [], isLoading } = useCashOutTransactionCostsList(filters);
   const { deleteTransactionCost } = useCashOutMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   const totalAmount = costs.reduce(
     (sum, cost) => sum + (cost.amountCop ?? 0),
@@ -62,26 +81,28 @@ export function CashOutTransactionCostsTab() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="grid gap-4 p-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Fecha desde</Label>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Fecha hasta</Label>
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {!hideDateFilters ? (
+        <Card>
+          <CardContent className="grid gap-4 p-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Fecha desde</Label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Fecha hasta</Label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="flex justify-end">
         <Button
@@ -152,7 +173,16 @@ export function CashOutTransactionCostsTab() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteTransactionCost.mutate(cost.id)}
+                            onClick={() =>
+                              requestConfirm({
+                                title: "¿Eliminar costo por transacción?",
+                                description:
+                                  "Se eliminará el costo del registro. Esta acción no se puede deshacer.",
+                                confirmLabel: "Eliminar",
+                                onConfirm: () =>
+                                  deleteTransactionCost.mutate(cost.id),
+                              })
+                            }
                           >
                             <Trash2 className="size-4 text-red-600" />
                           </Button>
@@ -174,6 +204,8 @@ export function CashOutTransactionCostsTab() {
         cost={editingCost}
         defaultDate={defaultDate}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

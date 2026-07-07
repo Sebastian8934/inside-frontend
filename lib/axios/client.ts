@@ -5,6 +5,7 @@ import axios, {
 } from "axios";
 import type { ApiResponse } from "@/types/api";
 import { tryRefreshSession } from "@/lib/auth/refresh-session";
+import { CSRF_HEADER_NAME, getCsrfTokenFromDocument } from "@/lib/auth/csrf";
 import { API_BASE_URL } from "@/lib/api/constants";
 import { ApiError } from "@/lib/api/errors";
 import {
@@ -23,6 +24,21 @@ export const axiosClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+axiosClient.interceptors.request.use((config) => {
+  const token = getCsrfTokenFromDocument();
+  const method = config.method?.toUpperCase();
+
+  if (
+    token &&
+    method &&
+    ["POST", "PUT", "PATCH", "DELETE"].includes(method)
+  ) {
+    config.headers.set(CSRF_HEADER_NAME, token);
+  }
+
+  return config;
 });
 
 axiosClient.interceptors.response.use(

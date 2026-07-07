@@ -6,16 +6,22 @@ import { initGuestAuth, restoreSession } from "@/lib/api/auth";
 import { isGuestAuthPath } from "@/lib/auth/session-config";
 import { useAuthStore } from "@/stores/auth-store";
 
+/** Evita doble bootstrap con React Strict Mode (ref se resetea al remontar). */
+let authBootstrapStarted = false;
+
 type AuthProviderProps = {
   children: React.ReactNode;
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const pathname = usePathname();
-  const isInitialized = useAuthStore((state) => state.isInitialized);
 
   useEffect(() => {
-    if (isInitialized) return;
+    if (authBootstrapStarted || useAuthStore.getState().isInitialized) {
+      return;
+    }
+
+    authBootstrapStarted = true;
 
     if (isGuestAuthPath(pathname)) {
       initGuestAuth();
@@ -23,7 +29,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     void restoreSession();
-  }, [isInitialized, pathname]);
+  }, [pathname]);
 
   return <>{children}</>;
 }

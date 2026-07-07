@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { InactiveConfirmSwitch } from "@/components/shared/inactive-confirm-switch";
 import { useAccountHolderForm } from "@/components/features/banking/hooks/use-account-holder-form";
 import { FormModal, FormModalFooter } from "@/components/shared/form-modal";
 import { useActiveCompanyId } from "@/hooks/use-active-company";
@@ -102,9 +102,10 @@ export function AccountHolderFormSheet({
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <FormLabel className="mb-0">Activo</FormLabel>
                   <FormControl>
-                    <Switch
+                    <InactiveConfirmSwitch
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      entityName="este titular"
                     />
                   </FormControl>
                 </FormItem>

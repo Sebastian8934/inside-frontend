@@ -2,20 +2,20 @@
 
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 import { fetchCompanyContext } from "@/lib/api/companies";
 import { queryKeys } from "@/lib/query/query-keys";
 import { useAppStore } from "@/stores/app-store";
-import { useAuthStore } from "@/stores/auth-store";
 
 export function useCompanyContext() {
-  const status = useAuthStore((state) => state.status);
+  const enabled = useAuthQueryEnabled();
   const activeCompanyId = useAppStore((state) => state.activeCompanyId);
   const setActiveCompanyId = useAppStore((state) => state.setActiveCompanyId);
 
   const query = useQuery({
     queryKey: queryKeys.companies.context,
     queryFn: fetchCompanyContext,
-    enabled: status === "authenticated",
+    enabled,
   });
 
   useEffect(() => {

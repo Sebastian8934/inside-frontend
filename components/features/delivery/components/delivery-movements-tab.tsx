@@ -26,27 +26,44 @@ import { DeliveryMovementSheet } from "@/components/features/delivery/components
 import { useDeliveryCatalogQueries } from "@/components/features/delivery/hooks/use-delivery-catalog-queries";
 import { useDeliveryMovementsList } from "@/components/features/delivery/hooks/use-delivery-movements-list";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
 import { useIsClientOnly } from "@/hooks/use-user-roles";
 import { toDateOnlyString } from "@/lib/api/build-url";
+import { startOfToday } from "@/hooks/use-operation-date";
 import type { DeliveryMovementListItem } from "@/types/delivery";
 import { DELIVERY_MOVEMENT_TYPES } from "@/types/delivery";
 import { formatCop, formatDateOnly } from "@/lib/utils/format";
 
 export function DeliveryMovementsTab({
   readOnly = false,
+  dateFrom: dateFromProp,
+  dateTo: dateToProp,
+  onDateFromChange,
+  onDateToChange,
+  hideDateFilters = false,
 }: {
   readOnly?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+  onDateFromChange?: (value: string) => void;
+  onDateToChange?: (value: string) => void;
+  hideDateFilters?: boolean;
 }) {
   const companyId = useActiveCompanyId();
   const isClientOnly = useIsClientOnly();
   const readOnlyMode = readOnly || isClientOnly;
-  const operativeDate = useOperativeDate();
-  const defaultDate = toDateOnlyString(operativeDate);
-  const yearStart = `${operativeDate.getFullYear()}-01-01`;
+  const today = startOfToday();
+  const defaultDate = toDateOnlyString(today);
+  const yearStart = `${today.getFullYear()}-01-01`;
 
-  const [dateFrom, setDateFrom] = useState(readOnly ? yearStart : defaultDate);
-  const [dateTo, setDateTo] = useState(defaultDate);
+  const [internalDateFrom, setInternalDateFrom] = useState(
+    readOnly ? yearStart : defaultDate,
+  );
+  const [internalDateTo, setInternalDateTo] = useState(defaultDate);
+  const dateFrom = dateFromProp ?? internalDateFrom;
+  const dateTo = dateToProp ?? internalDateTo;
+  const setDateFrom = onDateFromChange ?? setInternalDateFrom;
+  const setDateTo = onDateToChange ?? setInternalDateTo;
   const [clientFilter, setClientFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [referenceFilter, setReferenceFilter] = useState("");
@@ -103,25 +120,35 @@ export function DeliveryMovementsTab({
       <Card>
         <CardContent
           className={`grid gap-4 p-4 ${
-            readOnlyMode ? "md:grid-cols-4" : "md:grid-cols-5"
+            hideDateFilters
+              ? readOnlyMode
+                ? "md:grid-cols-2"
+                : "md:grid-cols-3"
+              : readOnlyMode
+                ? "md:grid-cols-4"
+                : "md:grid-cols-5"
           }`}
         >
-          <div className="space-y-2">
-            <Label>Fecha desde</Label>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Fecha hasta</Label>
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </div>
+          {!hideDateFilters ? (
+            <>
+              <div className="space-y-2">
+                <Label>Fecha desde</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fecha hasta</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+            </>
+          ) : null}
           {!readOnlyMode ? (
             <div className="space-y-2">
               <Label>Cliente</Label>

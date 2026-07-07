@@ -1,6 +1,5 @@
 import { applySession, refreshSessionRequest } from "@/lib/api/auth";
-import { clearSessionMarker } from "@/lib/auth/session-marker";
-import { useAuthStore } from "@/stores/auth-store";
+import { clearClientSession } from "@/lib/auth/clear-client-session";
 
 let refreshPromise: Promise<boolean> | null = null;
 
@@ -16,8 +15,7 @@ export async function tryRefreshSession(): Promise<boolean> {
         applySession(data);
         return true;
       } catch {
-        clearSessionMarker();
-        useAuthStore.getState().clearSession();
+        clearClientSession();
         return false;
       } finally {
         refreshPromise = null;

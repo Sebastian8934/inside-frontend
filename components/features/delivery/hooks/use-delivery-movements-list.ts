@@ -6,14 +6,17 @@ import {
   type DeliveryMovementFilters,
 } from "@/components/features/delivery/api/delivery.api";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 
 export function useDeliveryMovementsList(
   filters: DeliveryMovementFilters,
   enabled = true,
 ) {
+  const authReady = useAuthQueryEnabled();
+
   return useQuery({
     queryKey: queryKeys.delivery.movements(filters),
     queryFn: () => fetchDeliveryMovementsApi(filters),
-    enabled: enabled && Boolean(filters.companyId),
+    enabled: authReady && enabled && Boolean(filters.companyId),
   });
 }

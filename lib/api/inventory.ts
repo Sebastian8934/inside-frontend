@@ -1,6 +1,15 @@
-import { axiosGet, axiosPost, axiosPut } from "@/lib/axios";
+import {
+  axiosGetValidated,
+  axiosPostValidated,
+  axiosPutValidated,
+} from "@/lib/axios/validated";
 import { buildApiUrl } from "@/lib/api/build-url";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import {
+  inventoryMovementSchema,
+  inventoryMovementsListSchema,
+  otcSummaryListSchema,
+} from "@/lib/validation/operations.schema";
 import type {
   CreateMovementPayload,
   InventoryMovement,
@@ -18,18 +27,26 @@ export type MovementFilters = {
   txHash?: string;
 };
 
-export async function fetchMovements(filters: MovementFilters = {}) {
-  return (
-    (await axiosGet<InventoryMovement[]>(
-      buildApiUrl(API_ENDPOINTS.inventory.movements, filters),
-    )) ?? []
+export async function fetchMovements(
+  filters: MovementFilters = {},
+): Promise<InventoryMovement[]> {
+  return axiosGetValidated(
+    buildApiUrl(API_ENDPOINTS.inventory.movements, filters),
+    inventoryMovementsListSchema,
+    undefined,
+    "Lista de movimientos de inventario inválida.",
   );
 }
 
-export async function createMovement(payload: CreateMovementPayload) {
-  return axiosPost<InventoryMovement>(
+export async function createMovement(
+  payload: CreateMovementPayload,
+): Promise<InventoryMovement> {
+  return axiosPostValidated(
     API_ENDPOINTS.inventory.movements,
+    inventoryMovementSchema,
     payload,
+    undefined,
+    "Movimiento de inventario creado con respuesta inválida.",
   );
 }
 
@@ -37,10 +54,13 @@ export async function updateMovement(
   id: number,
   payload: UpdateMovementPayload,
   companyId?: number | null,
-) {
-  return axiosPut<InventoryMovement>(
+): Promise<InventoryMovement> {
+  return axiosPutValidated(
     buildApiUrl(API_ENDPOINTS.inventory.movement(id), { companyId }),
+    inventoryMovementSchema,
     payload,
+    undefined,
+    "Movimiento de inventario actualizado con respuesta inválida.",
   );
 }
 
@@ -52,10 +72,13 @@ export type OtcSummaryFilters = {
   otcCounterpartyId?: number;
 };
 
-export async function fetchOtcSummary(filters: OtcSummaryFilters = {}) {
-  return (
-    (await axiosGet<OtcSummaryItem[]>(
-      buildApiUrl(API_ENDPOINTS.inventory.otcSummary, filters),
-    )) ?? []
+export async function fetchOtcSummary(
+  filters: OtcSummaryFilters = {},
+): Promise<OtcSummaryItem[]> {
+  return axiosGetValidated(
+    buildApiUrl(API_ENDPOINTS.inventory.otcSummary, filters),
+    otcSummaryListSchema,
+    undefined,
+    "Resumen OTC inválido.",
   );
 }

@@ -22,7 +22,7 @@ import { useWithdrawalCatalogQueries } from "@/components/features/withdrawals/h
 import { useWithdrawalConsolidatedForm } from "@/components/features/withdrawals/hooks/use-withdrawal-consolidated-form";
 import { FormModal, FormModalFooter } from "@/components/shared/form-modal";
 import { toDateOnlyString } from "@/lib/api/build-url";
-import { useOperativeDate } from "@/hooks/use-active-company";
+import { startOfToday } from "@/hooks/use-operation-date";
 import type { WithdrawalConsolidatedItem } from "@/types/withdrawals";
 
 type WithdrawalConsolidatedSheetProps = {
@@ -42,8 +42,7 @@ export function WithdrawalConsolidatedSheet({
   defaultPeriodMonth,
   defaultPeriodYear,
 }: WithdrawalConsolidatedSheetProps) {
-  const operativeDate = useOperativeDate();
-  const operationDate = toDateOnlyString(operativeDate);
+  const operationDate = toDateOnlyString(startOfToday());
   const { companies } = useWithdrawalCatalogQueries(companyId, open);
   const defaultCompanyId = companies[0]?.id;
 

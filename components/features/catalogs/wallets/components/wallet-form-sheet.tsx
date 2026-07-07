@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { InactiveConfirmSwitch } from "@/components/shared/inactive-confirm-switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useWalletForm } from "@/components/features/catalogs/wallets/hooks/use-wallet-form";
 import { useWalletPlatforms } from "@/components/features/catalogs/wallets/hooks/use-wallets-list";
@@ -236,9 +236,10 @@ export function WalletFormSheet({
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <FormLabel>Activa</FormLabel>
                   <FormControl>
-                    <Switch
+                    <InactiveConfirmSwitch
                       checked={field.value ?? true}
                       onCheckedChange={field.onChange}
+                      entityName="esta billetera"
                     />
                   </FormControl>
                 </FormItem>

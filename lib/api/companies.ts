@@ -1,13 +1,25 @@
-import { axiosGet } from "@/lib/axios";
+import { axiosGetValidated } from "@/lib/axios/validated";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
-import type { CompanyContext } from "@/types/company";
+import {
+  companiesListSchema,
+  companyContextSchema,
+} from "@/lib/validation/company.schema";
+import type { CompanyContext, CompanyListItem } from "@/types/company";
+
+export async function fetchAccessibleCompanies(): Promise<CompanyListItem[]> {
+  return axiosGetValidated(
+    API_ENDPOINTS.companies.list,
+    companiesListSchema,
+    undefined,
+    "Lista de empresas inválida.",
+  );
+}
 
 export async function fetchCompanyContext(): Promise<CompanyContext> {
-  const data = await axiosGet<CompanyContext>(API_ENDPOINTS.companies.context);
-
-  if (!data) {
-    throw new Error("No se recibió el contexto de empresa.");
-  }
-
-  return data;
+  return axiosGetValidated(
+    API_ENDPOINTS.companies.context,
+    companyContextSchema,
+    undefined,
+    "Contexto de empresa inválido.",
+  );
 }

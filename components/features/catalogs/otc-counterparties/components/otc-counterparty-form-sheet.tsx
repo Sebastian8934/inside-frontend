@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { InactiveConfirmSwitch } from "@/components/shared/inactive-confirm-switch";
 import { useOtcCounterpartyForm } from "@/components/features/catalogs/otc-counterparties/hooks/use-otc-counterparty-form";
 import { FormModal, FormModalFooter } from "@/components/shared/form-modal";
 import type { OtcCounterparty } from "@/types/catalogs";
@@ -120,9 +120,10 @@ export function OtcCounterpartyFormSheet({
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <FormLabel>Activa</FormLabel>
                   <FormControl>
-                    <Switch
+                    <InactiveConfirmSwitch
                       checked={field.value ?? true}
                       onCheckedChange={field.onChange}
+                      entityName="esta contraparte OTC"
                     />
                   </FormControl>
                 </FormItem>

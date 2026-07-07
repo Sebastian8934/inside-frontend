@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { InactiveConfirmSwitch } from "@/components/shared/inactive-confirm-switch";
 import { usePlatformForm } from "@/components/features/catalogs/platforms/hooks/use-platform-form";
 import { FormModal, FormModalFooter } from "@/components/shared/form-modal";
 import type { Platform } from "@/types/catalogs";
@@ -101,9 +101,10 @@ export function PlatformFormSheet({
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <FormLabel>Activa</FormLabel>
                   <FormControl>
-                    <Switch
+                    <InactiveConfirmSwitch
                       checked={field.value ?? true}
                       onCheckedChange={field.onChange}
+                      entityName="esta plataforma"
                     />
                   </FormControl>
                 </FormItem>

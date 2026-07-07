@@ -24,16 +24,17 @@ import {
 import { CashOutPayrollSheet } from "@/components/features/cash-out/components/cash-out-payroll-sheet";
 import { useCashOutMutations } from "@/components/features/cash-out/hooks/use-cash-out-mutations";
 import { useCashOutPayrollList } from "@/components/features/cash-out/hooks/use-cash-out-payroll-list";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import type { PayrollEntry } from "@/types/cash-out";
 import { getPeriodFromDate, MONTH_NAMES } from "@/types/cash-out";
 import { formatCop } from "@/lib/utils/format";
 
 export function CashOutPayrollTab() {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const defaultPeriod = getPeriodFromDate(operativeDate);
+  const defaultPeriod = getPeriodFromDate(new Date());
 
   const [periodMonth, setPeriodMonth] = useState(
     String(defaultPeriod.periodMonth),
@@ -55,6 +56,7 @@ export function CashOutPayrollTab() {
 
   const { data: entries = [], isLoading } = useCashOutPayrollList(filters);
   const { deletePayroll } = useCashOutMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   const totalPayroll = entries.reduce((sum, entry) => sum + entry.totalCop, 0);
 
@@ -167,7 +169,15 @@ export function CashOutPayrollTab() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deletePayroll.mutate(entry.id)}
+                          onClick={() =>
+                            requestConfirm({
+                              title: "¿Eliminar registro de nómina?",
+                              description:
+                                "Se eliminará el registro del período. Esta acción no se puede deshacer.",
+                              confirmLabel: "Eliminar",
+                              onConfirm: () => deletePayroll.mutate(entry.id),
+                            })
+                          }
                         >
                           <Trash2 className="size-4 text-red-600" />
                         </Button>
@@ -198,6 +208,8 @@ export function CashOutPayrollTab() {
           periodYear: Number(periodYear),
         }}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

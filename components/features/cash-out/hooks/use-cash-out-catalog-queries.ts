@@ -6,13 +6,15 @@ import {
   fetchCashOutGroupsApi,
   fetchPaymentAccountsApi,
 } from "@/components/features/cash-out/api/cash-out.api";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 import { queryKeys } from "@/lib/query/query-keys";
 
 export function useCashOutCatalogQueries(
   companyId: number | null,
   enabled = true,
 ) {
-  const isEnabled = enabled && Boolean(companyId);
+  const authReady = useAuthQueryEnabled();
+  const isEnabled = authReady && enabled && Boolean(companyId);
 
   const groupsQuery = useQuery({
     queryKey: queryKeys.cashOut.groups({ companyId }),

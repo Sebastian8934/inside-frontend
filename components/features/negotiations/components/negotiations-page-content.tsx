@@ -12,19 +12,20 @@ import { useNegotiationDayDetail } from "@/components/features/negotiations/hook
 import { useNegotiationDays } from "@/components/features/negotiations/hooks/use-negotiation-days";
 import { useNegotiationDayMutations } from "@/components/features/negotiations/hooks/use-negotiation-mutations";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
+import { OperationDateFilter } from "@/components/shared/operation-date-filter";
 import { PageHeader } from "@/components/shared/page-header";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
-import { toDateOnlyString } from "@/lib/api/build-url";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useOperationDate } from "@/hooks/use-operation-date";
 import { formatDateOnly } from "@/lib/utils/format";
 
 export function NegotiationsPageContent() {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const operationDate = toDateOnlyString(operativeDate);
+  const { operationDate, setOperationDate, operationDateString } =
+    useOperationDate();
 
   const dayFilters = useMemo(
-    () => ({ companyId, dateFrom: operationDate, dateTo: operationDate }),
-    [companyId, operationDate],
+    () => ({ companyId, dateFrom: operationDateString, dateTo: operationDateString }),
+    [companyId, operationDateString],
   );
 
   const { data: dayList, isLoading: daysLoading } = useNegotiationDays(dayFilters);
@@ -45,6 +46,12 @@ export function NegotiationsPageContent() {
         <PageHeader
           title="Negociaciones"
           description="Operaciones diarias de negociación USDT/COP"
+          filters={
+            <OperationDateFilter
+              date={operationDate}
+              onDateChange={setOperationDate}
+            />
+          }
         />
         <EmptyState message="Seleccione una empresa." />
       </div>
@@ -56,7 +63,13 @@ export function NegotiationsPageContent() {
       <div className="p-6">
         <PageHeader
           title="Negociaciones"
-          description={`Operaciones — ${formatDateOnly(operationDate)}`}
+          description={`Operaciones — ${formatDateOnly(operationDateString)}`}
+          filters={
+            <OperationDateFilter
+              date={operationDate}
+              onDateChange={setOperationDate}
+            />
+          }
         />
         <LoadingState label="Cargando negociaciones..." />
       </div>
@@ -68,14 +81,20 @@ export function NegotiationsPageContent() {
       <div className="p-6">
         <PageHeader
           title="Negociaciones"
-          description={`Operaciones — ${formatDateOnly(operationDate)}`}
+          description={`Operaciones — ${formatDateOnly(operationDateString)}`}
+          filters={
+            <OperationDateFilter
+              date={operationDate}
+              onDateChange={setOperationDate}
+            />
+          }
         />
         <div className="space-y-4 py-12 text-center">
           <EmptyState
-            message={`No hay día de negociación para ${formatDateOnly(operationDate)}.`}
+            message={`No hay día de negociación para ${formatDateOnly(operationDateString)}.`}
           />
           <Button
-            onClick={() => createDay.mutate(operationDate)}
+            onClick={() => createDay.mutate(operationDateString)}
             disabled={createDay.isPending}
           >
             <Plus className="mr-2 size-4" />
@@ -99,6 +118,12 @@ export function NegotiationsPageContent() {
       <PageHeader
         title="Negociaciones"
         description={`Operaciones — ${formatDateOnly(dayDetail.operationDate)}`}
+        filters={
+          <OperationDateFilter
+            date={operationDate}
+            onDateChange={setOperationDate}
+          />
+        }
       />
 
       <NegotiationDayPanel day={dayDetail} companyId={companyId} />

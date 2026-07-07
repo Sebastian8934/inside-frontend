@@ -1,6 +1,15 @@
-import { axiosGet, axiosPost, axiosPut } from "@/lib/axios";
+import {
+  axiosGetValidated,
+  axiosPostValidated,
+  axiosPutValidated,
+} from "@/lib/axios/validated";
 import { buildApiUrl } from "@/lib/api/build-url";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import {
+  deliveryClientSummaryListSchema,
+  deliveryMovementDetailSchema,
+  deliveryMovementsListSchema,
+} from "@/lib/validation/operations.schema";
 import type {
   CreateDeliveryMovementPayload,
   DeliveryClientSummary,
@@ -26,29 +35,36 @@ export type DeliverySummaryFilters = {
 
 export async function fetchDeliveryMovements(
   filters: DeliveryMovementFilters = {},
-) {
-  return (
-    (await axiosGet<DeliveryMovementListItem[]>(
-      buildApiUrl(API_ENDPOINTS.delivery.movements, filters),
-    )) ?? []
+): Promise<DeliveryMovementListItem[]> {
+  return axiosGetValidated(
+    buildApiUrl(API_ENDPOINTS.delivery.movements, filters),
+    deliveryMovementsListSchema,
+    undefined,
+    "Lista de movimientos de delivery inválida.",
   );
 }
 
 export async function fetchDeliveryMovementById(
   id: number,
   companyId?: number | null,
-) {
-  return axiosGet<DeliveryMovementDetail>(
+): Promise<DeliveryMovementDetail> {
+  return axiosGetValidated(
     buildApiUrl(API_ENDPOINTS.delivery.movement(id), { companyId }),
+    deliveryMovementDetailSchema,
+    undefined,
+    "Detalle de movimiento de delivery inválido.",
   );
 }
 
 export async function createDeliveryMovement(
   payload: CreateDeliveryMovementPayload,
-) {
-  return axiosPost<DeliveryMovementDetail>(
+): Promise<DeliveryMovementDetail> {
+  return axiosPostValidated(
     API_ENDPOINTS.delivery.movements,
+    deliveryMovementDetailSchema,
     payload,
+    undefined,
+    "Movimiento de delivery creado con respuesta inválida.",
   );
 }
 
@@ -56,19 +72,23 @@ export async function updateDeliveryMovement(
   id: number,
   payload: UpdateDeliveryMovementPayload,
   companyId?: number | null,
-) {
-  return axiosPut<DeliveryMovementDetail>(
+): Promise<DeliveryMovementDetail> {
+  return axiosPutValidated(
     buildApiUrl(API_ENDPOINTS.delivery.movement(id), { companyId }),
+    deliveryMovementDetailSchema,
     payload,
+    undefined,
+    "Movimiento de delivery actualizado con respuesta inválida.",
   );
 }
 
 export async function fetchDeliveryClientSummary(
   filters: DeliverySummaryFilters = {},
-) {
-  return (
-    (await axiosGet<DeliveryClientSummary[]>(
-      buildApiUrl(API_ENDPOINTS.delivery.clientSummary, filters),
-    )) ?? []
+): Promise<DeliveryClientSummary[]> {
+  return axiosGetValidated(
+    buildApiUrl(API_ENDPOINTS.delivery.clientSummary, filters),
+    deliveryClientSummaryListSchema,
+    undefined,
+    "Resumen de clientes delivery inválido.",
   );
 }

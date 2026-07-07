@@ -6,13 +6,16 @@ import {
   type WithdrawalConsolidatedFilters,
 } from "@/components/features/withdrawals/api/withdrawals.api";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 
 export function useWithdrawalConsolidatedList(
   filters: WithdrawalConsolidatedFilters,
 ) {
+  const authReady = useAuthQueryEnabled();
+
   return useQuery({
     queryKey: queryKeys.withdrawals.consolidated(filters),
     queryFn: () => fetchWithdrawalConsolidatedApi(filters),
-    enabled: Boolean(filters.companyId),
+    enabled: authReady && Boolean(filters.companyId),
   });
 }

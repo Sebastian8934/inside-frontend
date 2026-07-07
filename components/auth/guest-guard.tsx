@@ -28,7 +28,11 @@ export function GuestGuard({ children }: GuestGuardProps) {
   }
 
   if (status === "authenticated") {
-    return null;
+    return (
+      <div className="flex min-h-dvh w-full items-center justify-center bg-inside-content">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return <>{children}</>;

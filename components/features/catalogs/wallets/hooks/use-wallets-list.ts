@@ -7,12 +7,15 @@ import {
   fetchWallets,
 } from "@/components/features/catalogs/wallets/api/wallets.api";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 
 export function useWalletsList(companyId: number | null) {
+  const authReady = useAuthQueryEnabled();
+
   return useQuery({
     queryKey: queryKeys.wallets.all({ companyId, activeOnly: false }),
     queryFn: () => fetchWallets(companyId, false),
-    enabled: Boolean(companyId),
+    enabled: authReady && Boolean(companyId),
   });
 }
 
@@ -21,17 +24,21 @@ export function useWalletDetail(
   companyId: number | null,
   open: boolean,
 ) {
+  const authReady = useAuthQueryEnabled();
+
   return useQuery({
     queryKey: queryKeys.wallets.detail(walletId ?? 0),
     queryFn: () => fetchWalletById(walletId!, companyId),
-    enabled: open && Boolean(walletId && companyId),
+    enabled: authReady && open && Boolean(walletId && companyId),
   });
 }
 
 export function useWalletPlatforms(companyId: number | null, open: boolean) {
+  const authReady = useAuthQueryEnabled();
+
   return useQuery({
     queryKey: queryKeys.platforms.all({ companyId }),
     queryFn: () => fetchPlatforms(companyId),
-    enabled: open && Boolean(companyId),
+    enabled: authReady && open && Boolean(companyId),
   });
 }

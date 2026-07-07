@@ -24,18 +24,19 @@ import {
 } from "@/components/ui/table";
 import { ActivityLogFormSheet } from "@/components/features/activity-log";
 import { useActivityLogsList } from "@/components/features/activity-log/hooks/use-activity-logs-list";
+import { DateRangeFilter } from "@/components/shared/date-range-filter";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
 import { PageHeader } from "@/components/shared/page-header";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
 import { toDateOnlyString } from "@/lib/api/build-url";
+import { startOfToday } from "@/hooks/use-operation-date";
 import { formatDate } from "@/lib/utils/format";
 
 const LIMIT_OPTIONS = [50, 100, 200, 500] as const;
 
 export function ActivityLogPageContent() {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const defaultDate = toDateOnlyString(operativeDate);
+  const defaultDate = toDateOnlyString(startOfToday());
 
   const [dateFrom, setDateFrom] = useState(defaultDate);
   const [dateTo, setDateTo] = useState(defaultDate);
@@ -81,6 +82,16 @@ export function ActivityLogPageContent() {
       <PageHeader
         title="Auditoría"
         description="Historial de actividad y notas operativas"
+        filters={
+          <DateRangeFilter
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onDateFromChange={setDateFrom}
+            onDateToChange={setDateTo}
+            fromLabel="Desde"
+            toLabel="Hasta"
+          />
+        }
         actions={
           <Button size="sm" onClick={() => setSheetOpen(true)}>
             <Plus className="mr-2 size-4" />
@@ -90,23 +101,7 @@ export function ActivityLogPageContent() {
       />
 
       <Card className="mb-4">
-        <CardContent className="grid gap-4 p-4 md:grid-cols-5">
-          <div className="space-y-2">
-            <Label>Desde</Label>
-            <Input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Hasta</Label>
-            <Input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </div>
+        <CardContent className="grid gap-4 p-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label>Tipo</Label>
             <Select value={typeFilter} onValueChange={setTypeFilter}>

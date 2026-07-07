@@ -6,13 +6,15 @@ import {
   fetchNegotiationCounterpartiesApi,
   fetchNegotiationPlatformsApi,
 } from "@/components/features/negotiations/api/negotiation-catalog.api";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 import { queryKeys } from "@/lib/query/query-keys";
 
 export function useNegotiationCatalogQueries(
   companyId: number | null,
   enabled = true,
 ) {
-  const isEnabled = enabled && Boolean(companyId);
+  const authReady = useAuthQueryEnabled();
+  const isEnabled = authReady && enabled && Boolean(companyId);
 
   const platformsQuery = useQuery({
     queryKey: queryKeys.negotiations.catalog.platforms(companyId),

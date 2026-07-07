@@ -2,13 +2,15 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchDeliveryClientsApi } from "@/components/features/delivery/api/delivery.api";
+import { useAuthQueryEnabled } from "@/hooks/use-auth-query-enabled";
 import { queryKeys } from "@/lib/query/query-keys";
 
 export function useDeliveryCatalogQueries(
   companyId: number | null,
   enabled = true,
 ) {
-  const isEnabled = enabled && Boolean(companyId);
+  const authReady = useAuthQueryEnabled();
+  const isEnabled = authReady && enabled && Boolean(companyId);
 
   const clientsQuery = useQuery({
     queryKey: queryKeys.clients.all({ companyId }),

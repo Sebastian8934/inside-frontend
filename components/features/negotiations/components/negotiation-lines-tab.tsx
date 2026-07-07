@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/table";
 import { NegotiationLineSheet } from "@/components/features/negotiations/components/negotiation-line-sheet";
 import { useNegotiationLineMutations } from "@/components/features/negotiations/hooks/use-negotiation-mutations";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState } from "@/components/shared/data-states";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import type { DailyNegotiationDetail, NegotiationLine } from "@/types/negotiations";
 import { isNegotiationDayOpen } from "@/types/negotiations";
 import { formatCop, formatUsdt, usdtColorClass } from "@/lib/utils/format";
@@ -30,6 +32,7 @@ export function NegotiationLinesTab({ day, companyId }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingLine, setEditingLine] = useState<NegotiationLine | null>(null);
   const { deleteLine } = useNegotiationLineMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   const nextLineNumber =
     day.lines.reduce((max, line) => Math.max(max, line.lineNumber), 0) + 1;
@@ -108,7 +111,15 @@ export function NegotiationLinesTab({ day, companyId }: Props) {
                             variant="ghost"
                             size="icon"
                             disabled={!isOpen}
-                            onClick={() => deleteLine.mutate(line.id)}
+                            onClick={() =>
+                              requestConfirm({
+                                title: "¿Eliminar línea de negociación?",
+                                description:
+                                  "Se eliminará la línea del día. Esta acción no se puede deshacer.",
+                                confirmLabel: "Eliminar",
+                                onConfirm: () => deleteLine.mutate(line.id),
+                              })
+                            }
                           >
                             <Trash2 className="size-4 text-red-600" />
                           </Button>
@@ -130,6 +141,8 @@ export function NegotiationLinesTab({ day, companyId }: Props) {
         line={editingLine}
         nextLineNumber={nextLineNumber}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }

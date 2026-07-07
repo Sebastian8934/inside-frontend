@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { InactiveConfirmSwitch } from "@/components/shared/inactive-confirm-switch";
 import { useCashOutConceptForm } from "@/components/features/catalogs/cash-out-catalog/hooks/use-cash-out-concept-form";
 import { FormModal, FormModalFooter } from "@/components/shared/form-modal";
 import type { CashOutConcept, CashOutGroup } from "@/types/cash-out";
@@ -128,9 +128,10 @@ export function ConceptFormSheet({
                 <FormItem className="flex items-center justify-between rounded-lg border p-3">
                   <FormLabel>Activo</FormLabel>
                   <FormControl>
-                    <Switch
+                    <InactiveConfirmSwitch
                       checked={field.value ?? true}
                       onCheckedChange={field.onChange}
+                      entityName="este concepto"
                     />
                   </FormControl>
                 </FormItem>

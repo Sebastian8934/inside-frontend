@@ -24,9 +24,10 @@ import {
   useWithdrawalDayMutations,
   useWithdrawalTransferMutations,
 } from "@/components/features/withdrawals/hooks/use-withdrawal-mutations";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
-import { useActiveCompanyId, useOperativeDate } from "@/hooks/use-active-company";
-import { toDateOnlyString } from "@/lib/api/build-url";
+import { useActiveCompanyId } from "@/hooks/use-active-company";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import { formatCop, formatDateOnly } from "@/lib/utils/format";
 import type {
   WithdrawalCompany,
@@ -40,10 +41,16 @@ type DisplayLine = {
   line: WithdrawalCompanyLine;
 };
 
-export function WithdrawalDayTab() {
+type Props = {
+  operationDate: Date;
+  onOperationDateChange: (date: Date) => void;
+  operationDateString: string;
+};
+
+export function WithdrawalDayTab({
+  operationDateString,
+}: Props) {
   const companyId = useActiveCompanyId();
-  const operativeDate = useOperativeDate();
-  const operationDate = toDateOnlyString(operativeDate);
 
   const [soloConMovimiento, setSoloConMovimiento] = useState(false);
   const [lineSheetOpen, setLineSheetOpen] = useState(false);
@@ -53,8 +60,8 @@ export function WithdrawalDayTab() {
     useState<WithdrawalTransfer | null>(null);
 
   const dayFilters = useMemo(
-    () => ({ companyId, dateFrom: operationDate, dateTo: operationDate }),
-    [companyId, operationDate],
+    () => ({ companyId, dateFrom: operationDateString, dateTo: operationDateString }),
+    [companyId, operationDateString],
   );
 
   const { data: dayList, isLoading: daysLoading } = useWithdrawalDays(dayFilters);
@@ -68,6 +75,7 @@ export function WithdrawalDayTab() {
   const { companies } = useWithdrawalCatalogQueries(companyId);
   const { createDay } = useWithdrawalDayMutations(companyId);
   const { deleteTransfer } = useWithdrawalTransferMutations(companyId);
+  const { requestConfirm, confirmDialogProps } = useConfirmAction();
 
   const displayLines = useMemo(() => {
     return companies.map((company) => {
@@ -106,10 +114,10 @@ export function WithdrawalDayTab() {
     return (
       <div className="space-y-4 py-12 text-center">
         <EmptyState
-          message={`No hay día de retiros para ${formatDateOnly(operationDate)}.`}
+          message={`No hay día de retiros para ${formatDateOnly(operationDateString)}.`}
         />
         <Button
-          onClick={() => createDay.mutate(operationDate)}
+          onClick={() => createDay.mutate(operationDateString)}
           disabled={createDay.isPending}
         >
           <Plus className="mr-2 size-4" />
@@ -329,7 +337,16 @@ export function WithdrawalDayTab() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteTransfer.mutate(transfer.id)}
+                          onClick={() =>
+                            requestConfirm({
+                              title: "¿Eliminar transferencia?",
+                              description:
+                                "Se eliminará la transferencia del día de retiros. Esta acción no se puede deshacer.",
+                              confirmLabel: "Eliminar",
+                              onConfirm: () =>
+                                deleteTransfer.mutate(transfer.id),
+                            })
+                          }
                         >
                           <Trash2 className="size-4 text-red-600" />
                         </Button>
@@ -364,6 +381,8 @@ export function WithdrawalDayTab() {
         companyId={companyId}
         transfer={editingTransfer}
       />
+
+      <ConfirmActionDialog {...confirmDialogProps} />
     </div>
   );
 }
