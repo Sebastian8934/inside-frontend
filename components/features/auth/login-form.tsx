@@ -26,6 +26,8 @@ import { Input } from "@/components/ui/input";
 import { APP_NAME } from "@/config/constants";
 import { applySession, loginRequest } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/errors";
+import { getFirstAccessibleHref } from "@/lib/auth/permissions";
+import { normalizeRoleIds } from "@/config/roles";
 import {
   loginSchema,
   type LoginFormValues,
@@ -50,7 +52,12 @@ export function LoginForm() {
       const data = await loginRequest(values.email, values.password);
       applySession(data);
       toast.success("Sesión iniciada correctamente.");
-      router.replace("/");
+      const home =
+        getFirstAccessibleHref(
+          normalizeRoleIds(data.user.roles),
+          data.user.permissions ?? [],
+        ) ?? "/";
+      router.replace(home);
     } catch (error) {
       const message =
         error instanceof ApiError

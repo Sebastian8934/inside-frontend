@@ -7,6 +7,9 @@ export const API_ENDPOINTS = {
   },
   companies: {
     list: "/api/companies",
+    detail: (id: number) => `/api/companies/${id}`,
+    activate: (id: number) => `/api/companies/${id}/activate`,
+    deactivate: (id: number) => `/api/companies/${id}/deactivate`,
     context: "/api/companies/context",
   },
   users: {
@@ -15,6 +18,16 @@ export const API_ENDPOINTS = {
   },
   roles: {
     list: "/api/roles",
+    detail: (roleId: string) => `/api/roles/${roleId}`,
+  },
+  modules: {
+    list: "/api/modules",
+    detail: (id: number) => `/api/modules/${id}`,
+  },
+  permissions: {
+    list: "/api/permissions",
+    me: "/api/permissions/me",
+    role: (roleId: string) => `/api/permissions/roles/${roleId}`,
   },
   clients: {
     list: "/api/clients",

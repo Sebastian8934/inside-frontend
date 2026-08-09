@@ -14,26 +14,25 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
-import { INSIDE_ROLES, MANAGE_USERS_ROLES, OPERATOR_ROLES, ROLE_IDS } from "@/config/roles";
+import { INSIDE_ROLES } from "@/config/roles";
+import { PERMISSION_CODES } from "@/config/permissions";
 
 export type InsideRole = (typeof INSIDE_ROLES)[number];
 export { INSIDE_ROLES };
-
-const ALL_AUTHENTICATED_ROLES = [
-  ...OPERATOR_ROLES,
-  ROLE_IDS.Client,
-] as const;
 
 export type NavItem = {
   title: string;
   href: string;
   icon: LucideIcon;
   badge?: string;
-  /** Roles que pueden ver este ítem. Vacío = todos los autenticados. */
+  /** Permiso requerido para ver el ítem (preferido). */
+  permission?: string;
+  /** Alternativa: cualquiera de estos permisos. */
+  permissions?: string[];
+  /** @deprecated Preferir permission. Roles legacy. */
   roles?: string[];
-  /** Política del back requerida (referencia para Fase 1+) */
+  /** Política legacy del back. */
   policy?: "ManageUsers" | "ManageCatalogs";
-  /** Ítem visible pero sin ruta implementada aún */
   disabled?: boolean;
 };
 
@@ -48,9 +47,14 @@ export function isNavGroup(entry: NavEntry): entry is NavGroup {
   return "items" in entry;
 }
 
-/** Navegación alineada al mock INSIDE. */
+/** Navegación alineada a módulos/permisos. */
 export const navigation: NavEntry[] = [
-  { title: "Inicio", href: "/", icon: LayoutDashboard },
+  {
+    title: "Inicio",
+    href: "/",
+    icon: LayoutDashboard,
+    permission: PERMISSION_CODES.DashboardView,
+  },
   {
     title: "OPERACIONES",
     items: [
@@ -58,13 +62,13 @@ export const navigation: NavEntry[] = [
         title: "Inventario USDT",
         href: "/inventario",
         icon: Package,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.InventoryView,
       },
       {
         title: "Negociaciones",
         href: "/negociaciones",
         icon: Handshake,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.NegotiationsView,
       },
     ],
   },
@@ -75,19 +79,19 @@ export const navigation: NavEntry[] = [
         title: "Liquidez diaria",
         href: "/liquidez",
         icon: Landmark,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.LiquidityView,
       },
       {
         title: "Delivery",
         href: "/delivery",
         icon: Truck,
-        roles: [...ALL_AUTHENTICATED_ROLES],
+        permission: PERMISSION_CODES.DeliveryView,
       },
       {
         title: "Préstamos USDT",
         href: "/prestamos-usdt",
         icon: Coins,
-        roles: [...ALL_AUTHENTICATED_ROLES],
+        permission: PERMISSION_CODES.UsdtLoansView,
       },
     ],
   },
@@ -98,19 +102,19 @@ export const navigation: NavEntry[] = [
         title: "Cash out",
         href: "/cash-out",
         icon: Wallet,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.CashOutView,
       },
       {
         title: "Retiros",
         href: "/retiros",
         icon: Banknote,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.WithdrawalsView,
       },
       {
         title: "Bancos",
         href: "/bancos",
         icon: Building2,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.BankingView,
       },
     ],
   },
@@ -121,7 +125,7 @@ export const navigation: NavEntry[] = [
         title: "Informes",
         href: "/informes",
         icon: FileBarChart2,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.ReportsView,
       },
     ],
   },
@@ -132,11 +136,10 @@ export const navigation: NavEntry[] = [
         title: "Catálogos",
         href: "/catalogos",
         icon: Database,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.CatalogsView,
       },
     ],
   },
-
   {
     title: "ADMINISTRACIÓN",
     items: [
@@ -144,8 +147,10 @@ export const navigation: NavEntry[] = [
         title: "Administración",
         href: "/administracion",
         icon: UserCog,
-        roles: [...MANAGE_USERS_ROLES],
-        policy: "ManageUsers",
+        permissions: [
+          PERMISSION_CODES.AdministrationView,
+          PERMISSION_CODES.AdministrationManage,
+        ],
       },
     ],
   },
@@ -156,7 +161,7 @@ export const navigation: NavEntry[] = [
         title: "Auditoría",
         href: "/auditoria",
         icon: History,
-        roles: [...OPERATOR_ROLES],
+        permission: PERMISSION_CODES.ActivityLogView,
       },
     ],
   },

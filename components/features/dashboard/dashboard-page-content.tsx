@@ -35,8 +35,12 @@ import {
   buildDashboardKpisFromSummary,
   type DashboardKpi,
 } from "@/lib/dashboard/compute-kpis";
-import { hasAnyRole, OPERATOR_ROLES } from "@/lib/auth/permissions";
-import { useIsClientOnly } from "@/hooks/use-user-roles";
+import { hasPermission, PERMISSION_CODES } from "@/lib/auth/permissions";
+import {
+  useIsClientOnly,
+  useUserPermissions,
+  useUserRoles,
+} from "@/hooks/use-user-roles";
 import {
   formatCop,
   formatDate,
@@ -44,7 +48,6 @@ import {
   formatUsdt,
   usdtColorClass,
 } from "@/lib/utils/format";
-import { useAuthStore } from "@/stores/auth-store";
 import { ClientPortalDashboard } from "@/components/features/client-portal/client-portal-dashboard";
 
 const KPI_ICONS: Record<string, LucideIcon> = {
@@ -56,12 +59,17 @@ const KPI_ICONS: Record<string, LucideIcon> = {
   "liquidity-open": AlertTriangle,
 };
 
-const OPERATOR_ROLES_LIST = [...OPERATOR_ROLES];
-
 export function DashboardPageContent() {
-  const userRoles = useAuthStore((state) => state.user?.roles ?? []);
+  const userRoles = useUserRoles();
+  const userPermissions = useUserPermissions();
   const isClientOnly = useIsClientOnly();
-  const isOperator = hasAnyRole(userRoles, OPERATOR_ROLES_LIST);
+  const isOperator =
+    !isClientOnly &&
+    hasPermission(
+      userPermissions,
+      PERMISSION_CODES.DashboardView,
+      userRoles,
+    );
   const companyId = useActiveCompanyId();
   const { operationDate, setOperationDate, operationDateString: date } =
     useOperationDate();

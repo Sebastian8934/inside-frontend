@@ -17,14 +17,19 @@ import { AccountHolderFormSheet } from "@/components/features/banking/components
 import { useAccountHoldersList } from "@/components/features/banking/hooks/use-account-holders-list";
 import { EmptyState, LoadingState } from "@/components/shared/data-states";
 import { useActiveCompanyId } from "@/hooks/use-active-company";
-import { canManageCatalogs } from "@/lib/auth/permissions";
-import { useAuthStore } from "@/stores/auth-store";
+import { hasAnyPermission, PERMISSION_CODES } from "@/lib/auth/permissions";
+import { useUserPermissions, useUserRoles } from "@/hooks/use-user-roles";
 import type { AccountHolder } from "@/types/banking";
 
 export function AccountHoldersTab() {
   const companyId = useActiveCompanyId();
-  const userRoles = useAuthStore((state) => state.user?.roles ?? []);
-  const canEdit = canManageCatalogs(userRoles);
+  const userRoles = useUserRoles();
+  const userPermissions = useUserPermissions();
+  const canEdit = hasAnyPermission(
+    userPermissions,
+    [PERMISSION_CODES.BankingCreate, PERMISSION_CODES.BankingEdit],
+    userRoles,
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<AccountHolder | null>(null);
 

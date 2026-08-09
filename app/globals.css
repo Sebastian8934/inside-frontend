@@ -20,8 +20,8 @@
   --accent-foreground: #030213;
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
-  --input: transparent;
+  --border: #9ca3af;
+  --input: #9ca3af;
   --input-background: #f3f3f5;
   --switch-background: #cbced4;
   --font-weight-medium: 500;
@@ -80,6 +80,31 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  /* * { border-border } sets default border-color; force stronger
+     borders on cards and form controls. */
+  [data-slot="card"],
+  [data-slot="input"],
+  [data-slot="textarea"],
+  [data-slot="select-trigger"],
+  [data-slot="input-otp-slot"],
+  [data-slot="checkbox"],
+  [data-slot="radio-group-item"],
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="table-container"] {
+    border-color: var(--border);
+  }
+
+  [data-slot="input"],
+  [data-slot="textarea"],
+  [data-slot="select-trigger"],
+  [data-slot="input-otp-slot"],
+  [data-slot="checkbox"],
+  [data-slot="radio-group-item"] {
+    border-color: var(--input);
   }
 
   html {

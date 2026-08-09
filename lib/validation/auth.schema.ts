@@ -6,6 +6,7 @@ export const userInfoSchema = z.object({
   email: z.string().min(1),
   fullName: z.string(),
   roles: z.array(z.string()),
+  permissions: z.array(z.string()).default([]),
 });
 
 export const loginResponseSchema = z.object({

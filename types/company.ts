@@ -3,6 +3,7 @@ export type CompanyListItem = {
   name: string;
   taxId: string | null;
   isActive: boolean;
+  canDelete?: boolean;
 };
 
 export type CompanyContext = {

@@ -19,13 +19,14 @@ import { EmptyState, LoadingState } from "@/components/shared/data-states";
 import { PageHeader } from "@/components/shared/page-header";
 import { useActiveCompanyId } from "@/hooks/use-active-company";
 import { canManageCatalogs } from "@/lib/auth/permissions";
-import { useAuthStore } from "@/stores/auth-store";
+import { useUserPermissions, useUserRoles } from "@/hooks/use-user-roles";
 import type { CommercialRep } from "@/types/catalogs";
 
 export function CommercialRepsPanel() {
   const companyId = useActiveCompanyId();
-  const userRoles = useAuthStore((state) => state.user?.roles ?? []);
-  const canEdit = canManageCatalogs(userRoles);
+  const userRoles = useUserRoles();
+  const userPermissions = useUserPermissions();
+  const canEdit = canManageCatalogs(userRoles, userPermissions);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<CommercialRep | null>(null);
 

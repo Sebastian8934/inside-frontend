@@ -12,6 +12,7 @@ import {
   formatApiErrorMessage,
   parseApiErrorFromAxios,
 } from "@/lib/api/parse-api-error";
+import { useAppStore } from "@/stores/app-store";
 
 type RetryConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -36,6 +37,11 @@ axiosClient.interceptors.request.use((config) => {
     ["POST", "PUT", "PATCH", "DELETE"].includes(method)
   ) {
     config.headers.set(CSRF_HEADER_NAME, token);
+  }
+
+  const companyId = useAppStore.getState().activeCompanyId;
+  if (companyId) {
+    config.headers.set("X-Company-Id", String(companyId));
   }
 
   return config;

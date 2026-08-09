@@ -6,6 +6,7 @@ export const companyListItemSchema = z.object({
   name: z.string().min(1),
   taxId: z.string().nullable(),
   isActive: z.boolean(),
+  canDelete: z.boolean().optional().default(false),
 });
 
 export const companiesListSchema = z.array(companyListItemSchema);

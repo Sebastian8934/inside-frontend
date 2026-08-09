@@ -13,6 +13,7 @@ type AuthState = {
   status: AuthStatus;
   isInitialized: boolean;
   setSession: (expiresAt: string, user: UserInfo) => void;
+  setUserPermissions: (permissions: string[]) => void;
   setStatus: (status: AuthStatus) => void;
   setInitialized: (initialized: boolean) => void;
   clearSession: () => void;
@@ -29,6 +30,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       user,
       status: "authenticated",
     }),
+  setUserPermissions: (permissions) =>
+    set((state) =>
+      state.user
+        ? { user: { ...state.user, permissions } }
+        : state,
+    ),
   setStatus: (status) => set({ status }),
   setInitialized: (isInitialized) => set({ isInitialized }),
   clearSession: () =>

@@ -3,6 +3,7 @@ export type UserInfo = {
   email: string;
   fullName: string;
   roles: string[];
+  permissions: string[];
 };
 
 export type LoginResponse = {

@@ -1,0 +1,94 @@
+# Build and deploy Next.js (standalone) to Azure App Service on every push to main.
+#
+# Prerequisites:
+# 1. GitHub secret AZURE_WEBAPP_PUBLISH_PROFILE = XML de "Get publish profile"
+# 2. (Opcional) secret API_PROXY_TARGET = URL del API sin slash final
+# 3. App Service Node 20/22 · Startup Command: node server.js
+# 4. App Setting HOSTNAME=0.0.0.0 (obligatorio en Azure)
+# 5. SCM Basic Auth Publishing Credentials = On
+# 6. En el API: Cors__AllowedOrigins__0 = URL de este front
+
+name: Build and deploy Next.js to Azure
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: Inside-front
+  AZURE_WEBAPP_PACKAGE_PATH: ./deploy
+  NODE_VERSION: "22.x"
+  API_PROXY_TARGET: https://inside-back-eee5hreqbjbvefcr.canadaeast-01.azurewebsites.net
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js
+        env:
+          API_PROXY_TARGET: ${{ secrets.API_PROXY_TARGET || env.API_PROXY_TARGET }}
+          NEXT_PUBLIC_API_URL: ""
+        run: npm run build
+
+      - name: Prepare standalone package
+        run: |
+          set -euo pipefail
+          rm -rf "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+          mkdir -p "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+
+          cp -r .next/standalone/. "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/"
+          mkdir -p "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/.next"
+          cp -r .next/static "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/.next/static"
+          if [ -d public ]; then
+            cp -r public "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/public"
+          fi
+
+          printf '%s\n' \
+            'process.env.HOSTNAME = process.env.HOSTNAME || "0.0.0.0";' \
+            'process.env.PORT = process.env.PORT || "8080";' \
+            'require("./server.js");' \
+            > "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/startup.js"
+
+          test -f "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/server.js"
+          test -f "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/startup.js"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp
+          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: production
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp
+          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}

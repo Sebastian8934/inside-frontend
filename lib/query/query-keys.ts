@@ -3,7 +3,8 @@ export const queryKeys = {
     me: ["auth", "me"] as const,
   },
   companies: {
-    all: ["companies"] as const,
+    all: (includeInactive?: boolean) =>
+      ["companies", { includeInactive }] as const,
     context: ["companies", "context"] as const,
   },
   users: {
@@ -12,6 +13,15 @@ export const queryKeys = {
   },
   roles: {
     all: ["roles"] as const,
+  },
+  modules: {
+    all: (includeInactive?: boolean) =>
+      ["modules", { includeInactive }] as const,
+  },
+  permissions: {
+    all: (moduleId?: number) => ["permissions", { moduleId }] as const,
+    me: ["permissions", "me"] as const,
+    role: (roleId: string) => ["permissions", "role", roleId] as const,
   },
   clients: {
     all: (filters?: Record<string, unknown>) => ["clients", filters] as const,

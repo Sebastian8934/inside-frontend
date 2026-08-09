@@ -8,6 +8,7 @@ import {
 } from "@/config/navigation";
 import { APP_NAME, INSIDE_COLORS } from "@/config/constants";
 import { filterNavigation, getPrimaryRoleLabel } from "@/lib/auth/permissions";
+import { useActiveModuleRoutes } from "@/hooks/use-active-module-routes";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/stores/auth-store";
 import { SidebarNavLink } from "@/components/layout/sidebar-nav-link";
@@ -20,7 +21,14 @@ type AppSidebarProps = {
 export function AppSidebar({ className, onNavigate }: AppSidebarProps) {
   const user = useAuthStore((state) => state.user);
   const userRoles = user?.roles ?? [];
-  const visibleNavigation = filterNavigation(navigation, userRoles);
+  const userPermissions = user?.permissions ?? [];
+  const { activeModuleRoutes } = useActiveModuleRoutes();
+  const visibleNavigation = filterNavigation(
+    navigation,
+    userRoles,
+    userPermissions,
+    activeModuleRoutes,
+  );
 
   return (
     <aside

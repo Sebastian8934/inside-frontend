@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { logoutSession } from "@/lib/api/auth";
+import { fetchMyPermissions } from "@/lib/api/permissions";
 import { ApiError } from "@/lib/api/errors";
 import { useAppStore } from "@/stores/app-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -27,6 +28,7 @@ import { useAuthStore } from "@/stores/auth-store";
 export function AppHeader() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const setUserPermissions = useAuthStore((state) => state.setUserPermissions);
   const toggleSidebar = useAppStore((state) => state.toggleSidebar);
   const setActiveCompanyId = useAppStore((state) => state.setActiveCompanyId);
   const { canSwitchCompany, data: companyContext } = useCompanyContext();
@@ -47,13 +49,20 @@ export function AppHeader() {
     }
   }
 
-  function handleCompanyChange(companyId: number) {
+  async function handleCompanyChange(companyId: number) {
     setActiveCompanyId(companyId);
-    toast.success("Empresa activa actualizada.");
+    try {
+      const permissions = await fetchMyPermissions();
+      setUserPermissions(permissions);
+      toast.success("Empresa activa actualizada.");
+    } catch {
+      toast.success("Empresa activa actualizada.");
+      toast.error("No se pudieron refrescar los permisos de la empresa.");
+    }
   }
 
   return (
-    <header className="border-b border-gray-200 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
+    <header className="border-b border-gray-400 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
       <div className="flex items-center justify-between gap-2 sm:gap-4">
         {/* Izquierda: menú */}
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">

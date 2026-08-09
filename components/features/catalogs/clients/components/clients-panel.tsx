@@ -19,13 +19,14 @@ import { EmptyState, LoadingState } from "@/components/shared/data-states";
 import { PageHeader } from "@/components/shared/page-header";
 import { useActiveCompanyId } from "@/hooks/use-active-company";
 import { canManageCatalogs } from "@/lib/auth/permissions";
-import { useAuthStore } from "@/stores/auth-store";
+import { useUserPermissions, useUserRoles } from "@/hooks/use-user-roles";
 import type { Client } from "@/types/catalogs";
 
 export function ClientsPanel() {
   const companyId = useActiveCompanyId();
-  const userRoles = useAuthStore((state) => state.user?.roles ?? []);
-  const canEdit = canManageCatalogs(userRoles);
+  const userRoles = useUserRoles();
+  const userPermissions = useUserPermissions();
+  const canEdit = canManageCatalogs(userRoles, userPermissions);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 

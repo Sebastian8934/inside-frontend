@@ -107,6 +107,7 @@ export async function meRequest(): Promise<UserInfo> {
   return {
     ...user,
     roles: normalizeRoleIds(user.roles),
+    permissions: user.permissions ?? [],
   };
 }
 
@@ -114,6 +115,7 @@ export function applySession(data: LoginResponse) {
   const user: UserInfo = {
     ...data.user,
     roles: normalizeRoleIds(data.user.roles),
+    permissions: data.user.permissions ?? [],
   };
 
   const store = useAuthStore.getState();
