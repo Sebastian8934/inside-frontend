@@ -1,12 +1,14 @@
 # Build and deploy Next.js (standalone) to Azure App Service on every push to main.
 #
-# Prerequisites:
-# 1. GitHub secret AZURE_WEBAPP_PUBLISH_PROFILE = XML de "Get publish profile"
-# 2. (Opcional) secret API_PROXY_TARGET = URL del API sin slash final
-# 3. App Service Node 20/22 · Startup Command: node server.js
-# 4. App Setting HOSTNAME=0.0.0.0 (obligatorio en Azure)
-# 5. SCM Basic Auth Publishing Credentials = On
-# 6. En el API: Cors__AllowedOrigins__0 = URL de este front
+# App Service "front" MUST have:
+#   Startup Command: node server.js
+#   Stack: Node 20 or 22
+#   SCM Basic Auth Publishing Credentials: On
+#   App setting: SCM_DO_BUILD_DURING_DEPLOYMENT = false
+#   App setting: ENABLE_ORYX_BUILD = false
+#
+# API Cors__AllowedOrigins__0 =
+#   https://front-c0dge8gudpg3d5g8.canadaeast-01.azurewebsites.net
 
 name: Build and deploy Next.js to Azure
 
@@ -48,24 +50,59 @@ jobs:
       - name: Prepare standalone package
         run: |
           set -euo pipefail
-          rm -rf "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
-          mkdir -p "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+          OUT="${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
 
-          cp -r .next/standalone/. "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/"
-          mkdir -p "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/.next"
-          cp -r .next/static "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/.next/static"
+          cp -r .next/standalone/. "$OUT/"
+          mkdir -p "$OUT/.next"
+          cp -r .next/static "$OUT/.next/static"
           if [ -d public ]; then
-            cp -r public "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/public"
+            cp -r public "$OUT/public"
           fi
 
-          printf '%s\n' \
-            'process.env.HOSTNAME = process.env.HOSTNAME || "0.0.0.0";' \
-            'process.env.PORT = process.env.PORT || "8080";' \
-            'require("./server.js");' \
-            > "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/startup.js"
+          if [ -f "$OUT/server.js" ]; then
+            APP_DIR="$OUT"
+          else
+            APP_DIR="$(dirname "$(find "$OUT" -name server.js -type f | head -n 1)")"
+          fi
+          echo "Standalone app dir: $APP_DIR"
+          test -f "$APP_DIR/server.js"
 
-          test -f "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/server.js"
-          test -f "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/startup.js"
+          # Wrap Next server: Azure/Oryx often runs npm start / node server.js
+          mv "$APP_DIR/server.js" "$APP_DIR/next-server.js"
+          printf '%s\n' \
+            'process.env.HOSTNAME = "0.0.0.0";' \
+            'process.env.PORT = process.env.PORT || "8080";' \
+            'console.log("[azure] Next listening on", process.env.HOSTNAME + ":" + process.env.PORT);' \
+            'require("./next-server.js");' \
+            > "$APP_DIR/server.js"
+          # Patch package.json so "npm start" != "next start"
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const pkgPath = path.join('$APP_DIR', 'package.json');
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            pkg.scripts = pkg.scripts || {};
+            pkg.scripts.start = 'node server.js';
+            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+            console.log('patched', pkgPath, '->', pkg.scripts.start);
+          "
+
+          # If nested, flatten into wwwroot root
+          if [ "$APP_DIR" != "$OUT" ]; then
+            echo "Flattening nested standalone into package root..."
+            shopt -s dotglob
+            cp -a "$APP_DIR"/. "$OUT"/
+          fi
+
+          # Stop Oryx from rebuilding / extracting wrong node_modules
+          printf '%s\n' '[config]' 'SCM_DO_BUILD_DURING_DEPLOYMENT=false' > "$OUT/.deployment"
+          rm -f "$OUT/oryx-manifest.toml" || true
+
+          echo "--- package root ---"
+          ls -la "$OUT" | head -40
+          node -e "console.log(require('./$OUT/package.json').scripts)"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
