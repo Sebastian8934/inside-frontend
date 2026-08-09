@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: Inside-front
+  AZURE_WEBAPP_NAME: front
   AZURE_WEBAPP_PACKAGE_PATH: ./deploy
   NODE_VERSION: "22.x"
   API_PROXY_TARGET: https://inside-back-eee5hreqbjbvefcr.canadaeast-01.azurewebsites.net
