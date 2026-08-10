@@ -134,8 +134,17 @@ jobs:
           # Do NOT use zip -t (date filter). -y stores symlinks as links.
           (cd "$OUT" && zip -ry "$ZIP" .)
           echo "zip bytes: $(wc -c < "$ZIP")"
-          unzip -l "$ZIP" | grep -E '\.next/BUILD_ID|\.next/static/' | head -20
-          unzip -l "$ZIP" | grep -q '\.next/BUILD_ID'
+          # Avoid grep|head under pipefail (SIGPIPE / broken pipe → exit 2)
+          if ! unzip -l "$ZIP" | grep -q '\.next/BUILD_ID'; then
+            echo "ERROR: .next/BUILD_ID missing from zip"
+            exit 1
+          fi
+          if ! unzip -l "$ZIP" | grep -q '\.next/static/'; then
+            echo "ERROR: .next/static missing from zip"
+            exit 1
+          fi
+          echo "Zip OK: .next/BUILD_ID and .next/static present"
+          unzip -l "$ZIP" | grep '\.next/BUILD_ID' || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
