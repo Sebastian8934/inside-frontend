@@ -20,7 +20,6 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: front
-  AZURE_WEBAPP_PACKAGE_PATH: ./deploy
   NODE_VERSION: "22.x"
   API_PROXY_TARGET: https://inside-back-eee5hreqbjbvefcr.canadaeast-01.azurewebsites.net
 
@@ -50,16 +49,13 @@ jobs:
       - name: Prepare standalone package
         run: |
           set -euo pipefail
-          OUT="${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+          OUT="$GITHUB_WORKSPACE/deploy"
           rm -rf "$OUT"
           mkdir -p "$OUT"
 
-          cp -r .next/standalone/. "$OUT/"
-          mkdir -p "$OUT/.next"
-          cp -r .next/static "$OUT/.next/static"
-          if [ -d public ]; then
-            cp -r public "$OUT/public"
-          fi
+          # Copy standalone output (includes hidden .next)
+          shopt -s dotglob
+          cp -a .next/standalone/. "$OUT/"
 
           if [ -f "$OUT/server.js" ]; then
             APP_DIR="$OUT"
@@ -68,8 +64,19 @@ jobs:
           fi
           echo "Standalone app dir: $APP_DIR"
           test -f "$APP_DIR/server.js"
+          test -d "$APP_DIR/.next"
 
-          # Wrap Next server: Azure/Oryx often runs npm start / node server.js
+          # static assets must sit next to the standalone .next
+          mkdir -p "$APP_DIR/.next"
+          rm -rf "$APP_DIR/.next/static"
+          cp -a .next/static "$APP_DIR/.next/static"
+
+          if [ -d public ]; then
+            rm -rf "$APP_DIR/public"
+            cp -a public "$APP_DIR/public"
+          fi
+
+          # Wrap Next server: force bind 0.0.0.0 for Azure
           mv "$APP_DIR/server.js" "$APP_DIR/next-server.js"
           printf '%s\n' \
             'process.env.HOSTNAME = "0.0.0.0";' \
@@ -77,38 +84,65 @@ jobs:
             'console.log("[azure] Next listening on", process.env.HOSTNAME + ":" + process.env.PORT);' \
             'require("./next-server.js");' \
             > "$APP_DIR/server.js"
-          # Patch package.json so "npm start" != "next start"
-          node -e "
-            const fs = require('fs');
-            const path = require('path');
-            const pkgPath = path.join('$APP_DIR', 'package.json');
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-            pkg.scripts = pkg.scripts || {};
-            pkg.scripts.start = 'node server.js';
-            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-            console.log('patched', pkgPath, '->', pkg.scripts.start);
-          "
 
-          # If nested, flatten into wwwroot root
+          export APP_DIR
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const appDir = process.env.APP_DIR;
+          const pkgPath = path.join(appDir, 'package.json');
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          pkg.scripts = pkg.scripts || {};
+          pkg.scripts.start = 'node server.js';
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+          console.log('patched', pkgPath, '->', pkg.scripts.start);
+          NODE
+
           if [ "$APP_DIR" != "$OUT" ]; then
             echo "Flattening nested standalone into package root..."
-            shopt -s dotglob
-            cp -a "$APP_DIR"/. "$OUT"/
+            TMP="$GITHUB_WORKSPACE/deploy-flat"
+            rm -rf "$TMP"
+            mkdir -p "$TMP"
+            cp -a "$APP_DIR"/. "$TMP"/
+            rm -rf "$OUT"
+            mv "$TMP" "$OUT"
           fi
 
           # Stop Oryx from rebuilding / extracting wrong node_modules
           printf '%s\n' '[config]' 'SCM_DO_BUILD_DURING_DEPLOYMENT=false' > "$OUT/.deployment"
-          rm -f "$OUT/oryx-manifest.toml" || true
+          rm -f "$OUT/oryx-manifest.toml" "$OUT/node_modules.tar.gz" || true
 
+          test -f "$OUT/server.js"
+          test -f "$OUT/next-server.js"
+          test -f "$OUT/.next/BUILD_ID"
+          test -d "$OUT/.next/static"
+          test -d "$OUT/.next/server"
+
+          echo "BUILD_ID=$(cat "$OUT/.next/BUILD_ID")"
           echo "--- package root ---"
           ls -la "$OUT" | head -40
-          node -e "console.log(require('./$OUT/package.json').scripts)"
+          echo "--- .next ---"
+          ls -la "$OUT/.next" | head -40
+
+      - name: Zip package (keeps .next hidden folder)
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/deploy"
+          ZIP="$GITHUB_WORKSPACE/webapp.zip"
+          rm -f "$ZIP"
+          # Archive from inside folder so zip root = wwwroot.
+          # Do NOT use zip -t (date filter). -y stores symlinks as links.
+          (cd "$OUT" && zip -ry "$ZIP" .)
+          echo "zip bytes: $(wc -c < "$ZIP")"
+          unzip -l "$ZIP" | grep -E '\.next/BUILD_ID|\.next/static/' | head -20
+          unzip -l "$ZIP" | grep -q '\.next/BUILD_ID'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: webapp
-          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          path: webapp.zip
+          include-hidden-files: true
 
   deploy:
     runs-on: ubuntu-latest
@@ -121,11 +155,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: webapp
-          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          path: .
+
+      - name: Verify zip contains .next
+        run: |
+          set -euo pipefail
+          test -f webapp.zip
+          unzip -l webapp.zip | grep -q '\.next/BUILD_ID'
+          echo "Artifact OK: .next/BUILD_ID present"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: webapp.zip
+          clean: true
